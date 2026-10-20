@@ -70,24 +70,60 @@ class AgendaTest extends TestCase
         $this->assertTrue($this->disponibilidad()->slotsDisponibles($this->corte(), Carbon::parse('2026-10-25'))->isEmpty(), 'Domingo cerrado');
     }
 
-    public function test_tabla_del_dia_junta_tramos_y_un_tinte_cabe_solo_donde_hay_3_horas(): void
+    private function tinte(): \App\Models\Servicio
     {
-        // Tinte de 11 a 14 y un corte de 15 a 16: quedan libres 10-11, 14-15 y 16-19.
-        $tinte = \App\Models\Servicio::where('nombre', 'Tinte o decoloración')->firstOrFail();
-        $this->citas()->agendar($this->clienta('Ana'), $tinte, Carbon::parse('2026-10-20 11:00'));
-        $this->citas()->agendar($this->clienta('Rocío'), $this->corte(), Carbon::parse('2026-10-20 15:00'));
+        return \App\Models\Servicio::where('nombre', 'Tinte o decoloración')->firstOrFail();
+    }
 
-        $tramos = $this->disponibilidad()->tramosDelDia(Carbon::parse('2026-10-20'))
+    private function tramos(?int $seccionId): array
+    {
+        return $this->disponibilidad()->tramosDelDia(Carbon::parse('2026-10-20'), $seccionId)
             ->map(fn ($t) => $t['inicio']->format('H:i') . '-' . $t['fin']->format('H:i') . ($t['libre'] ? ' libre' : ' ocupado'))
             ->all();
+    }
 
-        $this->assertSame(['10:00-11:00 libre', '11:00-14:00 ocupado', '14:00-15:00 libre', '15:00-16:00 ocupado', '16:00-19:00 libre'], $tramos);
+    private function inicios($servicio): array
+    {
+        return $this->disponibilidad()->slotsDisponibles($servicio, Carbon::parse('2026-10-20'))
+            ->map(fn ($s) => $s['inicio']->format('H:i'))->all();
+    }
 
-        // En el hueco de 1 h caben cortes, pero otro tinte solo cabe a partir de las 16:00.
-        $inicios = $this->disponibilidad()->slotsDisponibles($tinte, Carbon::parse('2026-10-20'))->map(fn ($s) => $s['inicio']->format('H:i'));
-        $this->assertSame('16:00', $inicios->first());
-        $this->assertNotContains('10:00', $inicios);
-        $this->assertContains('14:00', $this->disponibilidad()->slotsDisponibles($this->corte(), Carbon::parse('2026-10-20'))->map(fn ($s) => $s['inicio']->format('H:i')));
+    public function test_un_tinte_no_ocupa_la_seccion_de_cortes(): void
+    {
+        // Tinte de 15 a 18 en color: en cortes siguen cabiendo tres cortes de 15 a 18.
+        $this->citas()->agendar($this->clienta('Ana'), $this->tinte(), Carbon::parse('2026-10-20 15:00'));
+
+        foreach (['15:00', '16:00', '17:00'] as $hora) {
+            $this->citas()->agendar($this->clienta('Rocío'), $this->corte(), Carbon::parse("2026-10-20 {$hora}"));
+        }
+
+        $this->assertSame(['10:00-15:00 libre', '15:00-18:00 ocupado', '18:00-19:00 libre'], $this->tramos($this->tinte()->seccion_id));
+        $this->assertSame(['10:00-15:00 libre', '15:00-18:00 ocupado', '18:00-19:00 libre'], $this->tramos($this->corte()->seccion_id));
+        $this->assertSame(4, Cita::count());
+    }
+
+    public function test_dentro_de_una_seccion_el_tinte_cabe_solo_donde_hay_3_horas(): void
+    {
+        // En color: tinte de 11 a 14 y manicura de 15 a 15:45.
+        $manicura = \App\Models\Servicio::where('nombre', 'Manicura')->firstOrFail();
+        $this->citas()->agendar($this->clienta('Ana'), $this->tinte(), Carbon::parse('2026-10-20 11:00'));
+        $this->citas()->agendar($this->clienta('Rocío'), $manicura, Carbon::parse('2026-10-20 15:00'));
+
+        $this->assertSame(
+            ['10:00-11:00 libre', '11:00-14:00 ocupado', '14:00-15:00 libre', '15:00-15:45 ocupado', '15:45-19:00 libre'],
+            $this->tramos($this->tinte()->seccion_id),
+        );
+
+        $this->assertSame('15:45', $this->inicios($this->tinte())[0]);
+        $this->assertContains('11:00', $this->inicios($this->corte()), 'La sección de cortes sigue libre a esa hora');
+    }
+
+    public function test_la_misma_clienta_no_puede_estar_en_dos_secciones_a_la_vez(): void
+    {
+        $this->citas()->agendar($this->clienta('Ana'), $this->tinte(), Carbon::parse('2026-10-20 15:00'));
+
+        $this->expectException(HorarioNoDisponibleException::class);
+        $this->citas()->agendar($this->clienta('Ana'), $this->corte(), Carbon::parse('2026-10-20 16:00'));
     }
 
     public function test_cancelar_es_idempotente_y_libera_el_horario(): void

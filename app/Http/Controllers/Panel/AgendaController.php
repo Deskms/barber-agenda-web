@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Panel;
 use App\Http\Controllers\Controller;
 use App\Models\Cita;
 use App\Models\HorarioAtencion;
+use App\Models\Seccion;
 use App\Services\Agenda\DisponibilidadService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -23,11 +24,25 @@ class AgendaController extends Controller
             ->orderBy('inicio')
             ->get();
 
+        // Una columna por sección: cada una tiene su propia agenda y sus huecos.
+        $secciones = Seccion::query()->where('activo', true)->orderBy('nombre')->get();
+        $agendas   = $secciones->map(fn (Seccion $s) => ['titulo' => $s->nombre, 'citas' => $citas->where('seccion_id', $s->id)]);
+
+        $sinSeccion = $citas->whereNull('seccion_id');
+
+        if ($secciones->isEmpty() || $sinSeccion->isNotEmpty()) {
+            $agendas->push(['titulo' => $secciones->isEmpty() ? null : 'Sin sección', 'citas' => $sinSeccion]);
+        }
+
+        $agendas = $agendas->map(fn (array $a) => $a + [
+            'huecos' => $horario ? $this->huecos($dia, $horario, $a['citas']) : [],
+        ]);
+
         return view('agenda.dia', [
             'dia'     => $dia,
             'horario' => $horario,
             'citas'   => $citas,
-            'huecos'  => $horario ? $this->huecos($dia, $horario, $citas) : [],
+            'agendas' => $agendas,
             'firma'   => $this->firma($dia, $dia),
         ]);
     }

@@ -35,7 +35,7 @@ class HuecoController extends Controller
             ->limit(30)
             ->get()
             // Si alguien ya ocupó ese horario, ya no es un hueco que vender.
-            ->filter(fn (Cita $c) => $disponibilidad->estaLibre($c->inicio, $c->fin));
+            ->filter(fn (Cita $c) => $disponibilidad->estaLibre($c->inicio, $c->fin, seccionId: $c->seccion_id));
 
         return view('huecos.index', ['huecos' => $huecos]);
     }
@@ -60,7 +60,7 @@ class HuecoController extends Controller
 
         $datos = $request->validate(['clientas' => ['required', 'array', 'min:1'], 'clientas.*' => ['integer']]);
 
-        if (! $disponibilidad->estaLibre($cita->inicio, $cita->fin)) {
+        if (! $disponibilidad->estaLibre($cita->inicio, $cita->fin, seccionId: $cita->seccion_id)) {
             return redirect()->route('huecos')->withErrors(['hueco' => 'Ese horario ya se ocupó; no se envió nada.']);
         }
 

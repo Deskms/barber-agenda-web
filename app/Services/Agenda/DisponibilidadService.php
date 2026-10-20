@@ -48,8 +48,11 @@ class DisponibilidadService
         return $inicio->greaterThanOrEqualTo($abre) && $fin->lessThanOrEqualTo($cierra);
     }
 
-    /** ¿Está libre este intervalo exacto? Ignora opcionalmente una cita (útil al reprogramar). */
-    public function estaLibre(Carbon $inicio, Carbon $fin, ?int $ignorarCitaId = null): bool
+    /**
+     * ¿Está libre este intervalo exacto en esa sección? Ignora opcionalmente
+     * una cita (útil al reprogramar).
+     */
+    public function estaLibre(Carbon $inicio, Carbon $fin, ?int $ignorarCitaId = null, ?int $seccionId = null): bool
     {
         if (! $this->dentroDelHorario($inicio, $fin)) {
             return false;
@@ -57,6 +60,7 @@ class DisponibilidadService
 
         return ! Cita::query()
             ->vigentes()
+            ->deLaSeccion($seccionId)
             ->queChocanCon($inicio, $fin)
             ->when($ignorarCitaId, fn ($q) => $q->whereKeyNot($ignorarCitaId))
             ->exists();
@@ -83,6 +87,7 @@ class DisponibilidadService
         // Una sola consulta para todo el día; el traslape se evalúa en memoria.
         $ocupadas = Cita::query()
             ->vigentes()
+            ->deLaSeccion($servicio->seccion_id)
             ->queChocanCon($abre, $cierra)
             ->when($ignorarCitaId, fn ($q) => $q->whereKeyNot($ignorarCitaId))
             ->get(['inicio', 'fin']);
@@ -141,7 +146,7 @@ class DisponibilidadService
      *
      * @return Collection<int, array{inicio: Carbon, fin: Carbon, libre: bool}>
      */
-    public function tramosDelDia(Carbon $dia): Collection
+    public function tramosDelDia(Carbon $dia, ?int $seccionId = null): Collection
     {
         $horario = $this->horarioDe($dia);
 
@@ -155,6 +160,7 @@ class DisponibilidadService
 
         $ocupadas = Cita::query()
             ->vigentes()
+            ->deLaSeccion($seccionId)
             ->queChocanCon($cursor, $cierra)
             ->orderBy('inicio')
             ->get(['inicio', 'fin']);

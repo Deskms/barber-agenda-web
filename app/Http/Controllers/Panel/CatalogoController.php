@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Panel;
 
 use App\Http\Controllers\Controller;
 use App\Models\HorarioAtencion;
+use App\Models\Seccion;
 use App\Models\Servicio;
 use Illuminate\Http\Request;
 
@@ -14,12 +15,16 @@ class CatalogoController extends Controller
 
     public function servicios()
     {
-        return view('catalogo.servicios', ['servicios' => Servicio::orderByDesc('activo')->orderBy('nombre')->get()]);
+        return view('catalogo.servicios', [
+            'servicios' => Servicio::with('seccion')->orderByDesc('activo')->orderBy('nombre')->get(),
+            'secciones' => Seccion::orderBy('nombre')->get(),
+        ]);
     }
 
     public function guardarServicio(Request $request, ?Servicio $servicio = null)
     {
         $datos = $request->validate([
+            'seccion_id'       => ['nullable', 'integer', 'exists:secciones,id'],
             'nombre'           => ['required', 'string', 'max:60'],
             'duracion_minutos' => ['required', 'integer', 'min:15', 'max:480', 'multiple_of:15'],
             'precio'           => ['nullable', 'numeric', 'min:0', 'max:99999'],
@@ -32,6 +37,20 @@ class CatalogoController extends Controller
         $servicio?->exists ? $servicio->update($datos) : Servicio::create($datos);
 
         return redirect()->route('servicios')->with('ok', 'Servicio guardado.');
+    }
+
+    /**
+     * Cada sección es una agenda independiente (por ejemplo "Cortes de hombre"
+     * y "Color y estética"): una cita en una no ocupa a la otra.
+     */
+    public function guardarSeccion(Request $request, ?Seccion $seccion = null)
+    {
+        $datos = $request->validate(['nombre' => ['required', 'string', 'max:60']]);
+        $datos['activo'] = $seccion?->exists ? $request->boolean('activo') : true;
+
+        $seccion?->exists ? $seccion->update($datos) : Seccion::create($datos);
+
+        return redirect()->route('servicios')->with('ok', 'Sección guardada.');
     }
 
     public function horarios()

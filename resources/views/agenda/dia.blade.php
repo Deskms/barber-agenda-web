@@ -4,9 +4,6 @@
 
 @php
     $estados = ['confirmada' => 'Confirmada', 'cancelada' => 'Cancelada', 'completada' => 'Atendida', 'no_asistio' => 'No asistió'];
-    $linea = collect($citas)->map(fn ($c) => ['tipo' => 'cita', 'inicio' => $c->inicio, 'cita' => $c])
-        ->concat(collect($huecos)->map(fn ($h) => ['tipo' => 'libre', 'inicio' => $h['inicio'], 'fin' => $h['fin']]))
-        ->sortBy(fn ($e) => $e['inicio']->timestamp . ($e['tipo'] === 'cita' ? '1' : '0'));
     $vigentes = $citas->whereIn('estado', ['confirmada', 'completada']);
 @endphp
 
@@ -34,6 +31,17 @@
     @endif
 </p>
 
+<div class="row g-3">
+@foreach ($agendas as $agenda)
+@php
+    $linea = collect($agenda['citas'])->map(fn ($c) => ['tipo' => 'cita', 'inicio' => $c->inicio, 'cita' => $c])
+        ->concat(collect($agenda['huecos'])->map(fn ($h) => ['tipo' => 'libre', 'inicio' => $h['inicio'], 'fin' => $h['fin']]))
+        ->sortBy(fn ($e) => $e['inicio']->timestamp . ($e['tipo'] === 'cita' ? '1' : '0'));
+@endphp
+<div class="col-lg">
+@if ($agenda['titulo'])
+    <h2 class="h6 text-uppercase text-secondary mb-2">{{ $agenda['titulo'] }}</h2>
+@endif
 @forelse ($linea as $e)
     @if ($e['tipo'] === 'libre')
         <div class="linea">
@@ -91,6 +99,9 @@
 @empty
     <div class="tarjeta p-4 text-center text-secondary">No hay citas este día.</div>
 @endforelse
+</div>
+@endforeach
+</div>
 @endsection
 
 @push('scripts')

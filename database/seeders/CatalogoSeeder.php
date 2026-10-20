@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use App\Models\Cliente;
 use App\Models\HorarioAtencion;
+use App\Models\Seccion;
 use App\Models\Servicio;
 use Illuminate\Database\Seeder;
 
@@ -11,16 +12,26 @@ class CatalogoSeeder extends Seeder
 {
     public function run(): void
     {
+        // Dos agendas independientes: mientras en color hacen un tinte de
+        // 3 h, en cortes pueden atender a tres clientes de 1 h.
+        $cortes = Seccion::firstOrCreate(['nombre' => 'Cortes de hombre']);
+        $color  = Seccion::firstOrCreate(['nombre' => 'Color y estética']);
+
         $servicios = [
-            ['nombre' => 'Corte de cabello', 'duracion_minutos' => 60,  'precio' => 180],
-            ['nombre' => 'Peinado',          'duracion_minutos' => 90,  'precio' => 350],
-            ['nombre' => 'Maquillaje',       'duracion_minutos' => 120, 'precio' => 800],
-            ['nombre' => 'Manicura',         'duracion_minutos' => 45,  'precio' => 250],
-            ['nombre' => 'Tinte o decoloración', 'duracion_minutos' => 180, 'precio' => 900],
+            ['nombre' => 'Corte de cabello',     'duracion_minutos' => 60,  'precio' => 180, 'seccion_id' => $cortes->id],
+            ['nombre' => 'Peinado',              'duracion_minutos' => 90,  'precio' => 350, 'seccion_id' => $color->id],
+            ['nombre' => 'Maquillaje',           'duracion_minutos' => 120, 'precio' => 800, 'seccion_id' => $color->id],
+            ['nombre' => 'Manicura',             'duracion_minutos' => 45,  'precio' => 250, 'seccion_id' => $color->id],
+            ['nombre' => 'Tinte o decoloración', 'duracion_minutos' => 180, 'precio' => 900, 'seccion_id' => $color->id],
         ];
 
         foreach ($servicios as $servicio) {
-            Servicio::firstOrCreate(['nombre' => $servicio['nombre']], $servicio);
+            $existente = Servicio::firstOrCreate(['nombre' => $servicio['nombre']], $servicio);
+
+            // Servicios creados antes de que existieran las secciones.
+            if ($existente->seccion_id === null) {
+                $existente->update(['seccion_id' => $servicio['seccion_id']]);
+            }
         }
 
         // Martes a sábado, 10:00 a 19:00. 0 = domingo ... 6 = sábado.

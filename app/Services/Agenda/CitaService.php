@@ -50,8 +50,10 @@ class CitaService
             // La revalidación ocurre DENTRO de la transacción, no antes.
             // Entre que se ofrece un horario y la clienta responde "sí" pueden
             // pasar minutos, y alguien más pudo haberlo tomado.
+            // Cada sección tiene su propia agenda: solo choca con citas de la misma.
             $ocupado = Cita::query()
                 ->vigentes()
+                ->deLaSeccion($servicio->seccion_id)
                 ->queChocanCon($inicio, $fin)
                 ->lockForUpdate()
                 ->exists();
@@ -62,9 +64,23 @@ class CitaService
                 );
             }
 
+            // Aunque haya lugar en otra sección, la misma clienta no puede
+            // estar en dos sillas a la vez.
+            $yaTieneOtra = $cliente->citas()
+                ->vigentes()
+                ->queChocanCon($inicio, $fin)
+                ->exists();
+
+            if ($yaTieneOtra) {
+                throw new HorarioNoDisponibleException(
+                    'Ya tienes otra cita a esa hora.'
+                );
+            }
+
             return Cita::create([
                 'cliente_id'  => $cliente->id,
                 'servicio_id' => $servicio->id,
+                'seccion_id'  => $servicio->seccion_id,
                 'inicio'      => $inicio,
                 'fin'         => $fin,
                 'estado'      => Cita::CONFIRMADA,
@@ -109,7 +125,7 @@ class CitaService
 
             $this->bloquearDia($nuevoInicio);
 
-            if (! $this->disponibilidad->estaLibre($nuevoInicio, $nuevoFin, $cita->id)) {
+            if (! $this->disponibilidad->estaLibre($nuevoInicio, $nuevoFin, $cita->id, $cita->seccion_id)) {
                 throw new HorarioNoDisponibleException(
                     'Ese horario no está disponible.'
                 );

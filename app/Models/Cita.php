@@ -20,7 +20,7 @@ class Cita extends Model
     public const ORIGEN_PANEL    = 'panel';
 
     protected $fillable = [
-        'cliente_id', 'servicio_id', 'inicio', 'fin',
+        'cliente_id', 'servicio_id', 'seccion_id', 'inicio', 'fin',
         'estado', 'origen', 'notas', 'cancelada_en', 'recordatorio_enviado_en',
     ];
 
@@ -42,6 +42,11 @@ class Cita extends Model
     public function servicio(): BelongsTo
     {
         return $this->belongsTo(Servicio::class);
+    }
+
+    public function seccion(): BelongsTo
+    {
+        return $this->belongsTo(Seccion::class);
     }
 
     public function difusiones(): HasMany
@@ -68,6 +73,15 @@ class Cita extends Model
     {
         return $q->where('inicio', '<', $fin)
                  ->where('fin', '>', $inicio);
+    }
+
+    /**
+     * Solo las citas de esa sección. Sin sección (null) el local funciona
+     * como una sola agenda, igual que antes de existir las secciones.
+     */
+    public function scopeDeLaSeccion(Builder $q, ?int $seccionId): Builder
+    {
+        return $q->where('seccion_id', $seccionId);
     }
 
     public function scopeDelDia(Builder $q, $dia): Builder

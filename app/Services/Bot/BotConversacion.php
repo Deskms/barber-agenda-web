@@ -144,7 +144,7 @@ class BotConversacion
             $inicio = $dia->copy()->setTimeFromTimeString($intencion['hora']);
             $fin    = $inicio->copy()->addMinutes($servicio->duracion_minutos);
 
-            if ($inicio->isFuture() && $this->disponibilidad->estaLibre($inicio, $fin)) {
+            if ($inicio->isFuture() && $this->disponibilidad->estaLibre($inicio, $fin, seccionId: $servicio->seccion_id)) {
                 $this->pedirConfirmacion($cliente, $servicio, $inicio);
 
                 return;
@@ -219,8 +219,8 @@ class BotConversacion
 
         try {
             $cita = $this->citas->agendar($cliente, $servicio, $inicio, Cita::ORIGEN_WHATSAPP);
-        } catch (HorarioNoDisponibleException) {
-            $this->whatsapp->enviarTexto($cliente->wa_id, 'Uy, ese horario se acaba de ocupar. Te muestro los que siguen libres.');
+        } catch (HorarioNoDisponibleException $e) {
+            $this->whatsapp->enviarTexto($cliente->wa_id, 'Uy, no se pudo: ' . lcfirst($e->getMessage()) . ' Te muestro los horarios que siguen libres.');
             $this->elegirHora($cliente, $servicio, $inicio->copy()->startOfDay());
 
             return;
@@ -348,11 +348,13 @@ class BotConversacion
 
     private function tablaDelDia(Servicio $servicio, Carbon $dia): string
     {
-        $filas = $this->disponibilidad->tramosDelDia($dia->copy()->startOfDay())
+        $filas = $this->disponibilidad->tramosDelDia($dia->copy()->startOfDay(), $servicio->seccion_id)
             ->map(fn (array $t) => ($t['libre'] ? '🟢' : '🔴') . " {$t['inicio']->format('H:i')} – {$t['fin']->format('H:i')}  " . ($t['libre'] ? 'libre' : 'ocupado'))
             ->implode("\n");
 
-        return '📅 *' . Str::ucfirst($this->diaLargo($dia)) . "*\n\n{$filas}\n\n"
+        $seccion = $servicio->seccion ? " · {$servicio->seccion->nombre}" : '';
+
+        return '📅 *' . Str::ucfirst($this->diaLargo($dia)) . "{$seccion}*\n\n{$filas}\n\n"
             . "*{$servicio->nombre}* dura " . $this->duracion($servicio->duracion_minutos)
             . ', así que solo te muestro los horarios donde cabe completo.';
     }

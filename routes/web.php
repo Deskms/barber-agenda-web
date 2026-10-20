@@ -34,6 +34,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/servicios', [CatalogoController::class, 'servicios'])->name('servicios');
     Route::post('/servicios', [CatalogoController::class, 'guardarServicio'])->name('servicios.store');
     Route::put('/servicios/{servicio}', [CatalogoController::class, 'guardarServicio'])->name('servicios.update');
+    Route::post('/secciones', [CatalogoController::class, 'guardarSeccion'])->name('secciones.store');
+    Route::put('/secciones/{seccion}', [CatalogoController::class, 'guardarSeccion'])->name('secciones.update');
     Route::get('/horarios', [CatalogoController::class, 'horarios'])->name('horarios');
     Route::put('/horarios', [CatalogoController::class, 'guardarHorarios'])->name('horarios.update');
 
