@@ -141,6 +141,63 @@ class DisponibilidadService
     }
 
     /**
+     * Mapa del día hora por hora, para que la clienta vea de un vistazo:
+     *   ocupado     → su sección ya tiene cita en esa hora
+     *   acompanada  → su sección está libre, pero en el local atienden a alguien más
+     *   libre       → no hay nadie más a esa hora
+     *   pasado      → la hora ya pasó
+     * Solo cuenta citas; nunca dice de quién son.
+     *
+     * @return Collection<int, array{hora: Carbon, estado: string, otras: int}>
+     */
+    public function mapaPorHora(Carbon $dia, ?int $seccionId = null): Collection
+    {
+        $horario = $this->horarioDe($dia);
+
+        if (! $horario) {
+            return collect();
+        }
+
+        $abre   = $dia->copy()->setTimeFromTimeString($horario->abre);
+        $cierra = $dia->copy()->setTimeFromTimeString($horario->cierra);
+        $ahora  = Carbon::now();
+
+        $citas = Cita::query()->vigentes()->queChocanCon($abre, $cierra)->get(['inicio', 'fin', 'seccion_id']);
+
+        $mapa = collect();
+
+        for ($hora = $abre->copy(); $hora->lessThan($cierra); $hora->addHour()) {
+            $fin   = $hora->copy()->addHour()->min($cierra);
+            $enEsa = $citas->filter(fn (Cita $c) => $c->inicio->lessThan($fin) && $c->fin->greaterThan($hora));
+            $mias  = $enEsa->where('seccion_id', $seccionId)->count();
+            $otras = $enEsa->count() - $mias;
+
+            $estado = match (true) {
+                $fin->lessThanOrEqualTo($ahora) => 'pasado',
+                $mias > 0                       => 'ocupado',
+                $otras > 0                      => 'acompanada',
+                default                         => 'libre',
+            };
+
+            $mapa->push(['hora' => $hora->copy(), 'estado' => $estado, 'otras' => $otras]);
+        }
+
+        return $mapa;
+    }
+
+    /** Cuántas citas de otras secciones coinciden con ese intervalo. */
+    public function citasSimultaneas(Carbon $inicio, Carbon $fin, ?int $seccionId): int
+    {
+        return Cita::query()
+            ->vigentes()
+            ->queChocanCon($inicio, $fin)
+            ->where(fn ($q) => $seccionId === null
+                ? $q->whereNotNull('seccion_id')
+                : $q->where('seccion_id', '!=', $seccionId)->orWhereNull('seccion_id'))
+            ->count();
+    }
+
+    /**
      * El día partido en tramos libres y ocupados, para mostrárselo a la
      * clienta como tabla. No dice quién ocupa cada tramo, solo que está ocupado.
      *

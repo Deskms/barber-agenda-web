@@ -118,7 +118,7 @@ class WhatsAppBotTest extends TestCase
 
         $this->toca("dia:{$corte->id}:2026-10-20");
         $tabla = $this->enviados()[count($this->enviados()) - 2]['text']['body'];
-        $this->assertStringContainsString('🟢 10:00 – 19:00  libre', $tabla);
+        $this->assertStringContainsString("[🟢10:00] [🟢11:00] [🟢12:00] [🟢13:00]\n", $tabla);
         $this->assertStringContainsString('dura 1 h', $tabla);
         $this->assertSame("hora:{$corte->id}:2026-10-20T10:00", $this->opciones()[0]);
         $this->assertLessThanOrEqual(10, count($this->opciones()));
@@ -133,6 +133,31 @@ class WhatsAppBotTest extends TestCase
         $this->assertSame(Cita::ORIGEN_WHATSAPP, $cita->origen);
         $this->assertSame('2026-10-20 10:00', $cita->inicio->format('Y-m-d H:i'));
         $this->assertStringContainsString('confirmada', $this->ultimo()['text']['body']);
+    }
+
+    public function test_mapa_y_lista_avisan_si_atienden_a_alguien_mas_a_esa_hora(): void
+    {
+        // Tinte de 15 a 18 en color; quien pide corte ve esas horas en amarillo, no en rojo.
+        $tinte = \App\Models\Servicio::where('nombre', 'Tinte o decoloración')->firstOrFail();
+        app(CitaService::class)->agendar($this->clienta('Ana'), $tinte, Carbon::parse('2026-10-20 15:00'));
+        app(CitaService::class)->agendar($this->clienta('Rocío'), $this->corte(), Carbon::parse('2026-10-20 12:00'));
+
+        $corte = $this->corte();
+        $this->toca("dia:{$corte->id}:2026-10-20");
+
+        $enviados = $this->enviados();
+        $mapa     = $enviados[count($enviados) - 2]['text']['body'];
+        $this->assertStringContainsString("[🟢10:00] [🟢11:00] [🔴12:00] [🟢13:00]\n[🟢14:00] [🟡15:00] [🟡16:00] [🟡17:00]\n[🟢18:00]", $mapa);
+
+        $filas = collect(end($enviados)['interactive']['action']['sections'][0]['rows'])->keyBy('id');
+        $this->assertSame('Sin otras citas a esa hora', $filas["hora:{$corte->id}:2026-10-20T10:00"]['description']);
+        $this->assertStringNotContainsString("T12:00", $filas->keys()->implode(','), 'Las 12 ya están ocupadas en cortes');
+
+        // 15:00 queda fuera de las primeras 9 filas; se pide "más tarde".
+        $this->toca("dia:{$corte->id}:2026-10-20|14:30");
+        $filas = collect($this->ultimo()['interactive']['action']['sections'][0]['rows'])->keyBy('id');
+        $this->assertSame('🟡 15:00 a 16:00', $filas["hora:{$corte->id}:2026-10-20T15:00"]['title']);
+        $this->assertSame('Atendiendo a 1 persona más a esa hora', $filas["hora:{$corte->id}:2026-10-20T15:00"]['description']);
     }
 
     public function test_si_otra_persona_gana_el_horario_ofrece_alternativas(): void

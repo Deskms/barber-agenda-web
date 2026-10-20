@@ -327,10 +327,21 @@ class BotConversacion
         $ofrecidos = $libres->filter(fn (array $s) => in_array((int) $s['inicio']->format('i'), [0, 30], true))->values();
         $ofrecidos = $ofrecidos->isEmpty() ? $libres : $ofrecidos;
 
-        $filas = $ofrecidos->take(9)->map(fn (array $s) => [
-            'id'    => "hora:{$servicio->id}:{$s['inicio']->format('Y-m-d\TH:i')}",
-            'title' => $s['inicio']->format('H:i') . ' a ' . $s['fin']->format('H:i'),
-        ]);
+        // En cada horario se dice si a esa hora atienden a alguien más, para
+        // que la clienta elija si prefiere un momento tranquilo.
+        $filas = $ofrecidos->take(9)->map(function (array $s) use ($servicio) {
+            $otras = $this->disponibilidad->citasSimultaneas($s['inicio'], $s['fin'], $servicio->seccion_id);
+
+            return [
+                'id'          => "hora:{$servicio->id}:{$s['inicio']->format('Y-m-d\TH:i')}",
+                'title'       => ($otras ? '🟡 ' : '🟢 ') . $s['inicio']->format('H:i') . ' a ' . $s['fin']->format('H:i'),
+                'description' => match ($otras) {
+                    0       => 'Sin otras citas a esa hora',
+                    1       => 'Atendiendo a 1 persona más a esa hora',
+                    default => "Atendiendo a {$otras} personas más a esa hora",
+                },
+            ];
+        });
 
         if ($ofrecidos->count() > 9) {
             $ultimo = $ofrecidos[8]['inicio']->format('H:i');
@@ -348,15 +359,21 @@ class BotConversacion
 
     private function tablaDelDia(Servicio $servicio, Carbon $dia): string
     {
-        $filas = $this->disponibilidad->tramosDelDia($dia->copy()->startOfDay(), $servicio->seccion_id)
-            ->map(fn (array $t) => ($t['libre'] ? '🟢' : '🔴') . " {$t['inicio']->format('H:i')} – {$t['fin']->format('H:i')}  " . ($t['libre'] ? 'libre' : 'ocupado'))
+        // Mapa de 4 horas por renglón: [🟢12:00] [🟡13:00] [🔴14:00] [🟢15:00]
+        $iconos = ['libre' => '🟢', 'acompanada' => '🟡', 'ocupado' => '🔴', 'pasado' => '⚪'];
+
+        $renglones = $this->disponibilidad->mapaPorHora($dia->copy()->startOfDay(), $servicio->seccion_id)
+            ->map(fn (array $h) => '[' . $iconos[$h['estado']] . $h['hora']->format('H:i') . ']')
+            ->chunk(4)
+            ->map(fn ($grupo) => $grupo->implode(' '))
             ->implode("\n");
 
         $seccion = $servicio->seccion ? " · {$servicio->seccion->nombre}" : '';
 
-        return '📅 *' . Str::ucfirst($this->diaLargo($dia)) . "{$seccion}*\n\n{$filas}\n\n"
+        return '📅 *' . Str::ucfirst($this->diaLargo($dia)) . "{$seccion}*\n\n{$renglones}\n\n"
+            . "🟢 libre   🟡 libre, atendiendo a alguien más   🔴 ocupado\n\n"
             . "*{$servicio->nombre}* dura " . $this->duracion($servicio->duracion_minutos)
-            . ', así que solo te muestro los horarios donde cabe completo.';
+            . ', así que en la lista solo salen los horarios donde cabe completo.';
     }
 
     private function duracion(int $minutos): string
