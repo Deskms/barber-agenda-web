@@ -1,5 +1,5 @@
 @echo off
-rem Levanta Barber Agenda en esta PC para el entorno de pruebas.
+rem Levanta TuNegocio Citas en esta PC para el entorno de pruebas.
 rem   - Web en http://127.0.0.1:8010 (solo local; el tunel de Cloudflare la publica)
 rem   - Cola: respuestas del bot de WhatsApp
 rem   - Programador: recordatorios de citas
@@ -17,4 +17,4 @@ start "BarberAgenda web" /min "%PHP%" artisan serve --host=127.0.0.1 --port=8010
 start "BarberAgenda cola" /min "%PHP%" artisan queue:work --tries=1 --timeout=60 --sleep=1
 start "BarberAgenda programador" /min "%PHP%" artisan schedule:work
 
-echo Barber Agenda iniciada en http://127.0.0.1:8010
+echo TuNegocio Citas iniciada en http://127.0.0.1:8010

@@ -19,7 +19,7 @@ return [
     'costo_marketing_usd' => (float) env('WHATSAPP_COSTO_MARKETING_USD', 0.0436),
 
     'negocio'      => [
-        'nombre'    => env('NEGOCIO_NOMBRE', 'Joss Estética y Barbería'),
+        'nombre'    => env('NEGOCIO_NOMBRE', 'TuNegocio Citas'),
         'direccion' => env('NEGOCIO_DIRECCION', ''),
     ],
 
