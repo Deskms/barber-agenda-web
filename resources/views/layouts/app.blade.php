@@ -39,7 +39,7 @@
     @if (session('ok'))
         <div class="alert alert-success">{{ session('ok') }}</div>
     @endif
-    @if ($errors->any())
+    @if ($errors->any() && ! request()->routeIs('login'))
         <div class="alert alert-danger">
             @foreach ($errors->all() as $error)
                 <div>{{ $error }}</div>

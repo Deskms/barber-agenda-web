@@ -5,6 +5,9 @@
 @section('contenido')
 <div class="login-tn">
     <h1>TuNegocio<span>Citas</span></h1>
+    @if ($errors->any())
+        <p class="error">{{ $errors->first() }}</p>
+    @endif
     <form method="post" action="{{ url('/login') }}">
         @csrf
         <label for="email">Correo</label>
