@@ -5,7 +5,9 @@ namespace App\Services\Bot;
 use App\Exceptions\HorarioNoDisponibleException;
 use App\Models\Cita;
 use App\Models\Cliente;
+use App\Models\Difusion;
 use App\Models\HorarioAtencion;
+use App\Models\Recontacto;
 use App\Models\Servicio;
 use App\Services\Agenda\CitaService;
 use App\Services\Agenda\DisponibilidadService;
@@ -86,6 +88,13 @@ class BotConversacion
             $cliente->update(['acepta_avisos' => true]);
             $this->whatsapp->enviarTexto($cliente->wa_id, 'Listo, te avisaremos cuando se libere un espacio. Escribe BAJA cuando ya no quieras recibirlos.');
 
+            return;
+        }
+
+        // Respuesta a un aviso de hueco o a un "ya te toca volver" mandado
+        // por plantilla: la plantilla no lleva botones, así que se contesta "sí".
+        if (in_array($limpio, ['si', 'sii', 'si!', 'si porfavor', 'si por favor', 'quiero', 'lo quiero', 'me interesa', 'va', 'ok', 'sale'], true)
+            && $this->responderAviso($cliente)) {
             return;
         }
 
@@ -178,6 +187,7 @@ class BotConversacion
             'ver'      => $this->verCita($cliente, $partes[1] ?? null),
             'cancelar' => $this->preguntarCancelacion($cliente, $partes[1] ?? null),
             'cancelok' => $this->cancelar($cliente, $partes[1] ?? null),
+            'dif'      => $this->tomarHueco($cliente, $partes[1] ?? null),
             default    => $this->menu($cliente),
         };
     }
@@ -476,6 +486,80 @@ class BotConversacion
             'Tu cita quedó cancelada. ¿Quieres agendar otra?',
             ['menu:agendar' => 'Agendar cita', 'menu:inicio' => 'No, gracias'],
         );
+    }
+
+    /**
+     * La clienta contestó "sí" a un aviso reciente. Devuelve false si no hay
+     * aviso pendiente, para que el mensaje siga su camino normal.
+     */
+    private function responderAviso(Cliente $cliente): bool
+    {
+        $hace24h = Carbon::now()->subDay();
+
+        $difusion = Difusion::query()
+            ->where('cliente_id', $cliente->id)
+            ->where('estado', 'enviada')
+            ->where('created_at', '>=', $hace24h)
+            ->where('inicio', '>', Carbon::now())
+            ->latest()
+            ->first();
+
+        $recontacto = Recontacto::query()
+            ->with('servicio')
+            ->where('cliente_id', $cliente->id)
+            ->where('estado', 'enviado')
+            ->where('created_at', '>=', $hace24h)
+            ->latest()
+            ->first();
+
+        if ($difusion && (! $recontacto || $difusion->created_at->greaterThanOrEqualTo($recontacto->created_at))) {
+            $this->tomarHueco($cliente, (string) $difusion->id);
+
+            return true;
+        }
+
+        if ($recontacto?->servicio?->activo) {
+            $this->elegirDia($cliente, $recontacto->servicio);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    /** "Lo quiero": ofrece el hueco con el servicio que la clienta suele pedir en esa sección. */
+    private function tomarHueco(Cliente $cliente, ?string $id): void
+    {
+        $difusion = ctype_digit((string) $id)
+            ? Difusion::where('cliente_id', $cliente->id)->find((int) $id)
+            : null;
+
+        if (! $difusion || $difusion->inicio->isPast()) {
+            $this->whatsapp->enviarTexto($cliente->wa_id, 'Ese espacio ya no está disponible. Te muestro qué más hay.');
+            $this->elegirServicio($cliente);
+
+            return;
+        }
+
+        $servicio = app(\App\Services\Marketing\Campanas::class)->servicioHabitual($cliente, $difusion->seccion_id);
+
+        if (! $servicio) {
+            $this->elegirServicio($cliente);
+
+            return;
+        }
+
+        $fin = $difusion->inicio->copy()->addMinutes($servicio->duracion_minutos);
+
+        if ($this->disponibilidad->estaLibre($difusion->inicio, $fin, seccionId: $servicio->seccion_id)) {
+            $this->pedirConfirmacion($cliente, $servicio, $difusion->inicio->copy());
+
+            return;
+        }
+
+        // Alguien más lo tomó primero: se le ofrece lo que quede ese día.
+        $this->whatsapp->enviarTexto($cliente->wa_id, 'Uy, alguien más ganó ese espacio. Te muestro lo que sigue libre ese día.');
+        $this->elegirHora($cliente, $servicio, $difusion->inicio->copy()->startOfDay());
     }
 
     private function info(Cliente $cliente): void

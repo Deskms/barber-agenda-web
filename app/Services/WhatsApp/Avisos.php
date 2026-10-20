@@ -52,7 +52,7 @@ class Avisos
         foreach ($clientas as $clienta) {
             $difusion = Difusion::firstOrCreate(
                 ['cita_id' => $cancelada->id, 'cliente_id' => $clienta->id],
-                ['inicio' => $inicio, 'fin' => $cancelada->fin, 'plantilla' => 'espacio_liberado'],
+                ['seccion_id' => $cancelada->seccion_id, 'inicio' => $inicio, 'fin' => $cancelada->fin, 'plantilla' => 'espacio_liberado'],
             );
 
             if (! $difusion->wasRecentlyCreated) {

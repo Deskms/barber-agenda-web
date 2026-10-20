@@ -28,6 +28,7 @@ class CatalogoController extends Controller
             'nombre'           => ['required', 'string', 'max:60'],
             'duracion_minutos' => ['required', 'integer', 'min:15', 'max:480', 'multiple_of:15'],
             'precio'           => ['nullable', 'numeric', 'min:0', 'max:99999'],
+            'volver_cada_dias' => ['nullable', 'integer', 'min:1', 'max:365'],
             'activo'           => ['nullable', 'boolean'],
         ], ['duracion_minutos.multiple_of' => 'La duración debe ser múltiplo de 15 minutos.']);
 

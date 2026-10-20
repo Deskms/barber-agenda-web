@@ -16,7 +16,14 @@ return [
 
     // Costo aproximado por plantilla de marketing entregada en México (USD),
     // para que la dueña vea cuánto cuesta una difusión antes de enviarla.
-    'costo_marketing_usd' => (float) env('WHATSAPP_COSTO_MARKETING_USD', 0.0436),
+    // Tarifa de Meta para México desde octubre de 2026: marketing US$0.0397.
+    // Los mensajes de servicio (dentro de las 24 h) tienen 1,000 gratis al mes.
+    'costo_marketing_usd' => (float) env('WHATSAPP_COSTO_MARKETING_USD', 0.0397),
+    'tipo_cambio'         => (float) env('TIPO_CAMBIO_USD_MXN', 18.5),
+
+    // Número público del negocio (sin +) para los links wa.me de la página
+    // de espacios libres. Con el número de prueba de Meta: 15551518872.
+    'numero_publico' => env('WHATSAPP_NUMERO_PUBLICO'),
 
     'negocio'      => [
         'nombre'    => env('NEGOCIO_NOMBRE', 'TuNegocio Citas'),
@@ -73,6 +80,16 @@ return [
             'category' => 'UTILITY',
             'body'     => 'Hola {{1}}, tu cita de {{2}} del {{3}} a las {{4}} fue cancelada. Escríbenos por aquí para elegir otro horario.',
             'ejemplos' => ['Fernanda', 'Corte', 'viernes 17 de octubre', '16:00'],
+        ],
+
+        // "Ya te toca volver": se manda a quien no ha regresado después de
+        // los días que la dueña puso en el servicio. Es marketing: se cobra.
+        'volver_a_agendar' => [
+            'name'     => 'volver_a_agendar',
+            'language' => 'es_MX',
+            'category' => 'MARKETING',
+            'body'     => 'Hola {{1}}, ya pasaron {{2}} días desde tu último {{3}}. ¿Te apartamos un lugar? Responde SÍ y te mostramos los horarios libres. Si ya no quieres estos mensajes, responde BAJA.',
+            'ejemplos' => ['Luis', '15', 'Corte de cabello'],
         ],
 
     ],

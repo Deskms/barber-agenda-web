@@ -10,11 +10,11 @@ class Cliente extends Model
 {
     protected $table = 'clientes';
 
-    protected $fillable = ['wa_id', 'nombre', 'acepta_avisos', 'notas'];
+    protected $fillable = ['wa_id', 'nombre', 'acepta_avisos', 'notas', 'ultimo_mensaje_en'];
 
     protected function casts(): array
     {
-        return ['acepta_avisos' => 'boolean'];
+        return ['acepta_avisos' => 'boolean', 'ultimo_mensaje_en' => 'datetime'];
     }
 
     public function citas(): HasMany
@@ -26,5 +26,15 @@ class Cliente extends Model
     public function scopeNotificables(Builder $q): Builder
     {
         return $q->where('acepta_avisos', true);
+    }
+
+    /**
+     * Meta deja contestar sin plantilla durante 24 h después del último
+     * mensaje de la clienta. Dejamos una hora de margen.
+     */
+    public function ventanaAbierta(): bool
+    {
+        return $this->ultimo_mensaje_en !== null
+            && $this->ultimo_mensaje_en->greaterThan(now()->subHours(23));
     }
 }

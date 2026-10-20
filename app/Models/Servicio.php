@@ -11,7 +11,7 @@ class Servicio extends Model
 {
     protected $table = 'servicios';
 
-    protected $fillable = ['seccion_id', 'nombre', 'duracion_minutos', 'precio', 'activo'];
+    protected $fillable = ['seccion_id', 'nombre', 'duracion_minutos', 'precio', 'volver_cada_dias', 'activo'];
 
     protected function casts(): array
     {

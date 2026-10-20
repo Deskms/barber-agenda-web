@@ -18,7 +18,7 @@ class CatalogoSeeder extends Seeder
         $color  = Seccion::firstOrCreate(['nombre' => 'Color y estética']);
 
         $servicios = [
-            ['nombre' => 'Corte de cabello',     'duracion_minutos' => 60,  'precio' => 180, 'seccion_id' => $cortes->id],
+            ['nombre' => 'Corte de cabello',     'duracion_minutos' => 60,  'precio' => 180, 'seccion_id' => $cortes->id, 'volver_cada_dias' => 15],
             ['nombre' => 'Peinado',              'duracion_minutos' => 90,  'precio' => 350, 'seccion_id' => $color->id],
             ['nombre' => 'Maquillaje',           'duracion_minutos' => 120, 'precio' => 800, 'seccion_id' => $color->id],
             ['nombre' => 'Manicura',             'duracion_minutos' => 45,  'precio' => 250, 'seccion_id' => $color->id],
@@ -31,6 +31,10 @@ class CatalogoSeeder extends Seeder
             // Servicios creados antes de que existieran las secciones.
             if ($existente->seccion_id === null) {
                 $existente->update(['seccion_id' => $servicio['seccion_id']]);
+            }
+
+            if ($existente->volver_cada_dias === null && isset($servicio['volver_cada_dias'])) {
+                $existente->update(['volver_cada_dias' => $servicio['volver_cada_dias']]);
             }
         }
 

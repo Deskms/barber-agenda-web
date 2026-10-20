@@ -39,7 +39,7 @@ class PanelTest extends TestCase
         app(CitaService::class)->agendar($this->clienta(), $this->corte(), Carbon::parse('2026-10-20 12:00'));
 
         $this->get('/')->assertOk()->assertSee('Ana')->assertSee('Libre hasta las 12:00');
-        foreach (['/semana', '/citas/nueva', '/clientas', '/servicios', '/horarios', '/huecos', '/clientas/' . $this->clienta()->id] as $ruta) {
+        foreach (['/semana', '/citas/nueva', '/clientas', '/servicios', '/horarios', '/huecos', '/promociones', '/clientas/' . $this->clienta()->id] as $ruta) {
             $this->get($ruta)->assertOk();
         }
     }

@@ -9,13 +9,15 @@ class Difusion extends Model
 {
     protected $table = 'difusiones';
 
-    protected $fillable = ['cita_id', 'cliente_id', 'inicio', 'fin', 'plantilla', 'estado', 'wamid', 'error'];
+    protected $fillable = ['cita_id', 'cliente_id', 'seccion_id', 'gratis', 'automatica', 'inicio', 'fin', 'plantilla', 'estado', 'wamid', 'error'];
 
     protected function casts(): array
     {
         return [
             'inicio' => 'datetime',
             'fin'    => 'datetime',
+            'gratis' => 'boolean',
+            'automatica' => 'boolean',
         ];
     }
 

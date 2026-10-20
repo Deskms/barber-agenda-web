@@ -143,9 +143,14 @@ class WhatsAppWebhookController extends Controller
         $nombre  = data_get($value, 'contacts.0.profile.name');
         $cliente = Cliente::firstOrCreate(['wa_id' => $waId], ['nombre' => $nombre]);
 
+        // Abre (o renueva) la ventana de 24 h en la que contestar no cuesta como marketing.
+        $cliente->forceFill(['ultimo_mensaje_en' => now()]);
+
         if ($nombre && $cliente->nombre !== $nombre) {
-            $cliente->update(['nombre' => $nombre]);
+            $cliente->nombre = $nombre;
         }
+
+        $cliente->save();
 
         Log::channel('whatsapp')->info('Mensaje de clienta', [
             'cliente_id' => $cliente->id,

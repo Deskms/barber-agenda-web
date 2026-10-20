@@ -21,6 +21,7 @@
                 <li class="nav-item"><a class="nav-link @if(request()->routeIs('agenda')) active @endif" href="{{ route('agenda') }}">Hoy</a></li>
                 <li class="nav-item"><a class="nav-link @if(request()->routeIs('agenda.semana')) active @endif" href="{{ route('agenda.semana') }}">Semana</a></li>
                 <li class="nav-item"><a class="nav-link @if(request()->routeIs('huecos*')) active @endif" href="{{ route('huecos') }}">Espacios libres</a></li>
+                <li class="nav-item"><a class="nav-link @if(request()->routeIs('promociones*')) active @endif" href="{{ route('promociones') }}">Promociones</a></li>
                 <li class="nav-item"><a class="nav-link @if(request()->routeIs('clientes*')) active @endif" href="{{ route('clientes') }}">Clientas</a></li>
                 <li class="nav-item"><a class="nav-link @if(request()->routeIs('servicios')) active @endif" href="{{ route('servicios') }}">Servicios</a></li>
                 <li class="nav-item"><a class="nav-link @if(request()->routeIs('horarios')) active @endif" href="{{ route('horarios') }}">Horario</a></li>

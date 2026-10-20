@@ -5,7 +5,9 @@ use App\Http\Controllers\Panel\AuthController;
 use App\Http\Controllers\Panel\CatalogoController;
 use App\Http\Controllers\Panel\CitaController;
 use App\Http\Controllers\Panel\ClienteController;
+use App\Http\Controllers\LibresController;
 use App\Http\Controllers\Panel\HuecoController;
+use App\Http\Controllers\Panel\PromocionesController;
 use App\Http\Controllers\Panel\WhatsAppController;
 use Illuminate\Support\Facades\Route;
 
@@ -15,6 +17,7 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::view('/privacidad', 'privacidad')->name('privacidad');
+Route::get('/libres', LibresController::class)->name('libres')->middleware('throttle:60,1');
 
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
@@ -46,6 +49,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/huecos', [HuecoController::class, 'index'])->name('huecos');
     Route::get('/huecos/{cita}', [HuecoController::class, 'show'])->name('huecos.show');
     Route::post('/huecos/{cita}/difundir', [HuecoController::class, 'difundir'])->name('huecos.difundir');
+
+    Route::get('/promociones', [PromocionesController::class, 'index'])->name('promociones');
+    Route::put('/promociones', [PromocionesController::class, 'guardar'])->name('promociones.guardar');
+    Route::post('/promociones/regresos', [PromocionesController::class, 'enviarRegresos'])->name('promociones.regresos')->middleware('throttle:3,1');
 
     Route::get('/whatsapp', [WhatsAppController::class, 'index'])->name('whatsapp');
     Route::post('/whatsapp/prueba', [WhatsAppController::class, 'prueba'])->name('whatsapp.prueba')->middleware('throttle:5,1');
