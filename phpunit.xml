@@ -31,6 +31,14 @@
         <env name="SESSION_DRIVER" value="array"/>
         <env name="PULSE_ENABLED" value="false"/>
         <env name="TELESCOPE_ENABLED" value="false"/>
+        <env name="SESSION_SECURE_COOKIE" value="false"/>
+        <env name="WHATSAPP_TOKEN" value="token-de-prueba"/>
+        <env name="WHATSAPP_PHONE_NUMBER_ID" value="123"/>
+        <env name="WHATSAPP_WABA_ID" value="456"/>
+        <env name="WHATSAPP_VERIFY_TOKEN" value="verificar-prueba"/>
+        <env name="WHATSAPP_APP_SECRET" value="secreto-de-prueba"/>
+        <env name="ANTHROPIC_API_KEY" value=""/>
+        <env name="PANEL_ADMIN_EMAIL" value=""/>
         <env name="NIGHTWATCH_ENABLED" value="false"/>
     </php>
 </phpunit>

@@ -35,4 +35,13 @@ return [
         ],
     ],
 
+
+    // Interpretación de texto libre en WhatsApp. Sin llave, el bot funciona
+    // solo con botones y listas.
+    'anthropic' => [
+        'key'    => env('ANTHROPIC_API_KEY'),
+        'model'  => env('ANTHROPIC_MODEL', 'claude-opus-5-5'),
+        'effort' => env('ANTHROPIC_EFFORT', 'low'),
+    ],
+
 ];
