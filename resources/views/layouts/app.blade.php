@@ -12,7 +12,7 @@
 @auth
 <nav class="navbar navbar-expand-lg navbar-dark barra">
     <div class="container-lg">
-        <a class="navbar-brand fw-semibold" href="{{ route('agenda') }}">✂️ {{ config('whatsapp.negocio.nombre') }}</a>
+        <a class="navbar-brand fw-bold marca" href="{{ route('agenda') }}">TuNegocio<span>Citas</span></a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#menu" aria-label="Menú">
             <span class="navbar-toggler-icon"></span>
         </button>

@@ -1,15 +1,17 @@
 :root {
     --tinta: #1f1b24;
-    --acento: #b0855b;
+    --acento: #e85d04;
+    --acento-oscuro: #b84a03;
     --libre: #e8f5ec;
     --libre-borde: #8cc8a0;
 }
 
-body { background: #f6f3ef; color: var(--tinta); }
+body { background: #f6f4f1; color: var(--tinta); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
 .barra { background: var(--tinta); }
 .barra .nav-link.active { color: #fff; border-bottom: 2px solid var(--acento); }
 .btn-acento { background: var(--acento); color: #fff; border: 0; }
-.btn-acento:hover { background: #95704b; color: #fff; }
+.btn-acento:hover { background: var(--acento-oscuro); color: #fff; }
+.marca span { color: var(--acento); }
 
 .tarjeta { background: #fff; border-radius: 14px; box-shadow: 0 1px 3px rgba(0,0,0,.06); }
 
@@ -36,3 +38,13 @@ body { background: #f6f3ef; color: var(--tinta); }
 
 .estado-ok { color: #1d6b2f; }
 .estado-falta { color: #b23b3b; }
+
+/* Login con el mismo estilo que TuNegocio MX */
+.login-tn { max-width: 360px; margin: 10vh auto; background: #fff; border: 1px solid #e4dfd8; border-radius: 10px; padding: 1rem; }
+.login-tn h1 { text-align: center; font-size: 2rem; font-weight: 700; margin: .5rem 0 0; }
+.login-tn h1 span { color: var(--acento); }
+.login-tn label { display: block; font-weight: 600; margin: .9rem 0 .3rem; }
+.login-tn input[type=email], .login-tn input[type=password] { width: 100%; padding: .55rem .65rem; border: 1px solid #cfc8bf; border-radius: 8px; font: inherit; background: #fff; }
+.login-tn .check { display: flex; gap: .5rem; align-items: center; font-weight: 400; }
+.login-tn .entrar { width: 100%; margin: 1rem 0 .5rem; padding: .9rem 1.3rem; font-size: 1.1rem; border: 1px solid var(--acento); border-radius: 8px; background: var(--acento); color: #fff; cursor: pointer; }
+.login-tn .entrar:hover { background: var(--acento-oscuro); }
