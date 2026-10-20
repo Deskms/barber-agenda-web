@@ -70,6 +70,26 @@ class AgendaTest extends TestCase
         $this->assertTrue($this->disponibilidad()->slotsDisponibles($this->corte(), Carbon::parse('2026-10-25'))->isEmpty(), 'Domingo cerrado');
     }
 
+    public function test_tabla_del_dia_junta_tramos_y_un_tinte_cabe_solo_donde_hay_3_horas(): void
+    {
+        // Tinte de 11 a 14 y un corte de 15 a 16: quedan libres 10-11, 14-15 y 16-19.
+        $tinte = \App\Models\Servicio::where('nombre', 'Tinte o decoloración')->firstOrFail();
+        $this->citas()->agendar($this->clienta('Ana'), $tinte, Carbon::parse('2026-10-20 11:00'));
+        $this->citas()->agendar($this->clienta('Rocío'), $this->corte(), Carbon::parse('2026-10-20 15:00'));
+
+        $tramos = $this->disponibilidad()->tramosDelDia(Carbon::parse('2026-10-20'))
+            ->map(fn ($t) => $t['inicio']->format('H:i') . '-' . $t['fin']->format('H:i') . ($t['libre'] ? ' libre' : ' ocupado'))
+            ->all();
+
+        $this->assertSame(['10:00-11:00 libre', '11:00-14:00 ocupado', '14:00-15:00 libre', '15:00-16:00 ocupado', '16:00-19:00 libre'], $tramos);
+
+        // En el hueco de 1 h caben cortes, pero otro tinte solo cabe a partir de las 16:00.
+        $inicios = $this->disponibilidad()->slotsDisponibles($tinte, Carbon::parse('2026-10-20'))->map(fn ($s) => $s['inicio']->format('H:i'));
+        $this->assertSame('16:00', $inicios->first());
+        $this->assertNotContains('10:00', $inicios);
+        $this->assertContains('14:00', $this->disponibilidad()->slotsDisponibles($this->corte(), Carbon::parse('2026-10-20'))->map(fn ($s) => $s['inicio']->format('H:i')));
+    }
+
     public function test_cancelar_es_idempotente_y_libera_el_horario(): void
     {
         Event::fake([EspacioLiberado::class]);

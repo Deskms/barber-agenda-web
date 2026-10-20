@@ -16,6 +16,7 @@ class CatalogoSeeder extends Seeder
             ['nombre' => 'Peinado',          'duracion_minutos' => 90,  'precio' => 350],
             ['nombre' => 'Maquillaje',       'duracion_minutos' => 120, 'precio' => 800],
             ['nombre' => 'Manicura',         'duracion_minutos' => 45,  'precio' => 250],
+            ['nombre' => 'Tinte o decoloración', 'duracion_minutos' => 180, 'precio' => 900],
         ];
 
         foreach ($servicios as $servicio) {

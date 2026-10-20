@@ -315,6 +315,13 @@ class BotConversacion
             return;
         }
 
+        // Primero la "tabla" del día, para que la clienta vea de un vistazo qué
+        // está libre y qué ocupado, y entienda por qué un servicio largo
+        // (un tinte de 3 h) tiene menos opciones que un corte.
+        if (! $desde) {
+            $this->whatsapp->enviarTexto($cliente->wa_id, $this->tablaDelDia($servicio, $dia));
+        }
+
         // Con pasos de 15 minutos un día tiene decenas de opciones; ofrecemos
         // cada media hora y dejamos la última fila para "más tarde".
         $ofrecidos = $libres->filter(fn (array $s) => in_array((int) $s['inicio']->format('i'), [0, 30], true))->values();
@@ -337,6 +344,25 @@ class BotConversacion
             $filas->all(),
             'Horarios libres',
         );
+    }
+
+    private function tablaDelDia(Servicio $servicio, Carbon $dia): string
+    {
+        $filas = $this->disponibilidad->tramosDelDia($dia->copy()->startOfDay())
+            ->map(fn (array $t) => ($t['libre'] ? '🟢' : '🔴') . " {$t['inicio']->format('H:i')} – {$t['fin']->format('H:i')}  " . ($t['libre'] ? 'libre' : 'ocupado'))
+            ->implode("\n");
+
+        return '📅 *' . Str::ucfirst($this->diaLargo($dia)) . "*\n\n{$filas}\n\n"
+            . "*{$servicio->nombre}* dura " . $this->duracion($servicio->duracion_minutos)
+            . ', así que solo te muestro los horarios donde cabe completo.';
+    }
+
+    private function duracion(int $minutos): string
+    {
+        $h = intdiv($minutos, 60);
+        $m = $minutos % 60;
+
+        return trim(($h ? "{$h} h " : '') . ($m ? "{$m} min" : ''));
     }
 
     private function pedirConfirmacion(Cliente $cliente, Servicio $servicio, Carbon $inicio): void

@@ -117,6 +117,9 @@ class WhatsAppBotTest extends TestCase
         $this->assertSame("dia:{$corte->id}:2026-10-20", $this->opciones()[0], 'Hoy martes hay lugar');
 
         $this->toca("dia:{$corte->id}:2026-10-20");
+        $tabla = $this->enviados()[count($this->enviados()) - 2]['text']['body'];
+        $this->assertStringContainsString('🟢 10:00 – 19:00  libre', $tabla);
+        $this->assertStringContainsString('dura 1 h', $tabla);
         $this->assertSame("hora:{$corte->id}:2026-10-20T10:00", $this->opciones()[0]);
         $this->assertLessThanOrEqual(10, count($this->opciones()));
 

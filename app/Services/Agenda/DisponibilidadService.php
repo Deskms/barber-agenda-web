@@ -134,4 +134,69 @@ class DisponibilidadService
 
         return $encontrados->take($cuantos)->values();
     }
+
+    /**
+     * El día partido en tramos libres y ocupados, para mostrárselo a la
+     * clienta como tabla. No dice quién ocupa cada tramo, solo que está ocupado.
+     *
+     * @return Collection<int, array{inicio: Carbon, fin: Carbon, libre: bool}>
+     */
+    public function tramosDelDia(Carbon $dia): Collection
+    {
+        $horario = $this->horarioDe($dia);
+
+        if (! $horario) {
+            return collect();
+        }
+
+        $cursor = $dia->copy()->setTimeFromTimeString($horario->abre);
+        $cierra = $dia->copy()->setTimeFromTimeString($horario->cierra);
+        $ahora  = Carbon::now();
+
+        $ocupadas = Cita::query()
+            ->vigentes()
+            ->queChocanCon($cursor, $cierra)
+            ->orderBy('inicio')
+            ->get(['inicio', 'fin']);
+
+        $tramos = collect();
+
+        $agregar = function (Carbon $inicio, Carbon $fin, bool $libre) use ($tramos) {
+            if ($fin->lessThanOrEqualTo($inicio)) {
+                return;
+            }
+
+            $ultimo = $tramos->pop();
+
+            // Tramos contiguos del mismo tipo se juntan en uno.
+            if ($ultimo && $ultimo['libre'] === $libre && $ultimo['fin']->equalTo($inicio)) {
+                $tramos->push(['inicio' => $ultimo['inicio'], 'fin' => $fin->copy(), 'libre' => $libre]);
+
+                return;
+            }
+
+            if ($ultimo) {
+                $tramos->push($ultimo);
+            }
+
+            $tramos->push(['inicio' => $inicio->copy(), 'fin' => $fin->copy(), 'libre' => $libre]);
+        };
+
+        // Lo que ya pasó hoy no se ofrece: cuenta como ocupado.
+        if ($cursor->lessThan($ahora)) {
+            $hasta = $ahora->greaterThan($cierra) ? $cierra->copy() : $ahora->copy()->ceilMinutes(self::PASO_MINUTOS);
+            $agregar($cursor, $hasta, false);
+            $cursor = $hasta;
+        }
+
+        foreach ($ocupadas as $cita) {
+            $agregar($cursor, $cita->inicio->max($cursor), true);
+            $agregar($cita->inicio->max($cursor), $cita->fin->min($cierra), false);
+            $cursor = $cita->fin->max($cursor);
+        }
+
+        $agregar($cursor, $cierra, true);
+
+        return $tramos->values();
+    }
 }
