@@ -19,9 +19,9 @@ class WhatsAppWebhookController extends Controller
     {
         $params = $request->query();
 
-        $mode      = $params['hub_mode']         ?? $params['hub.mode']         ?? null;
-        $token     = $params['hub_verify_token'] ?? $params['hub.verify_token'] ?? null;
-        $challenge = $params['hub_challenge']    ?? $params['hub.challenge']    ?? null;
+        $mode = $params['hub_mode'] ?? $params['hub.mode'] ?? null;
+        $token = $params['hub_verify_token'] ?? $params['hub.verify_token'] ?? null;
+        $challenge = $params['hub_challenge'] ?? $params['hub.challenge'] ?? null;
 
         if ($mode === 'subscribe' && $token === config('whatsapp.verify_token')) {
             Log::channel('whatsapp')->info('Webhook verificado correctamente.');
@@ -32,7 +32,7 @@ class WhatsAppWebhookController extends Controller
 
         Log::channel('whatsapp')->warning('Verificación de webhook rechazada', [
             'mode' => $mode,
-            'ip'   => $request->ip(),
+            'ip' => $request->ip(),
         ]);
 
         return response('Forbidden', 403);
@@ -55,7 +55,7 @@ class WhatsAppWebhookController extends Controller
         } catch (Throwable $e) {
             Log::channel('whatsapp')->error('Error al procesar el webhook', [
                 'mensaje' => $e->getMessage(),
-                'archivo' => $e->getFile() . ':' . $e->getLine(),
+                'archivo' => $e->getFile().':'.$e->getLine(),
             ]);
         }
 
@@ -114,19 +114,24 @@ class WhatsAppWebhookController extends Controller
         }
 
         // El nombre viene gratis en el perfil: registramos a la clienta sin preguntarle nada.
-        $nombre  = data_get($value, 'contacts.0.profile.name');
+        $nombre = data_get($value, 'contacts.0.profile.name');
         $cliente = Cliente::firstOrCreate(['wa_id' => $waId], ['nombre' => $nombre]);
 
-        if ($nombre && $cliente->nombre !== $nombre) {
+        // Solo se completa el nombre si no hay uno: el que capturó la dueña o la
+        // clienta en su cuenta tiene prioridad sobre el nombre de perfil.
+        if ($nombre && ! $cliente->nombre) {
             $cliente->update(['nombre' => $nombre]);
         }
 
+        // Enlaza el mensaje con la clienta para el historial de conversación (SCRUM-40).
+        $evento->forceFill(['cliente_id' => $cliente->id, 'direccion' => EventoWhatsapp::ENTRANTE])->save();
+
         Log::channel('whatsapp')->info('Mensaje de clienta', [
             'cliente_id' => $cliente->id,
-            'nombre'     => $cliente->nombre,
-            'wa_id'      => $cliente->wa_id,
-            'tipo'       => data_get($mensaje, 'type'),
-            'texto'      => data_get($mensaje, 'text.body'),
+            'nombre' => $cliente->nombre,
+            'wa_id' => $cliente->wa_id,
+            'tipo' => data_get($mensaje, 'type'),
+            'texto' => data_get($mensaje, 'text.body'),
         ]);
 
         // Aquí entrará la interpretación con IA en la siguiente fase.
@@ -142,7 +147,7 @@ class WhatsAppWebhookController extends Controller
     private function registrarEstado(array $estado): void
     {
         $wamid = data_get($estado, 'id');
-        $tipo  = data_get($estado, 'status');
+        $tipo = data_get($estado, 'status');
 
         if (! $wamid || ! $tipo) {
             return;
