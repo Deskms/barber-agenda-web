@@ -14,7 +14,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Validation\ValidationException;
 
-/** Clientas y su consentimiento (SCRUM-26), historial (visitas) y conversación (SCRUM-40). */
+/** Clientas y su consentimiento (SCRUM-26) e historial de visitas. */
 class ClienteController extends Controller
 {
     public function index(Request $request): AnonymousResourceCollection
@@ -27,7 +27,7 @@ class ClienteController extends Controller
                 ->withCount('citas')
                 ->when($buscar !== '', fn ($q) => $q->where(fn ($w) => $w
                     ->where('nombre', 'like', "%{$buscar}%")
-                    ->orWhere('wa_id', 'like', '%'.preg_replace('/\D+/', '', $buscar).'%')))
+                    ->orWhere('telefono', 'like', '%'.preg_replace('/\D+/', '', $buscar).'%')))
                 ->orderBy('nombre')
                 ->paginate(20)
         );
@@ -41,11 +41,11 @@ class ClienteController extends Controller
             'acepta_avisos' => ['sometimes', 'boolean'],
         ]);
 
-        $waId = $this->telefonoUnico($datos['telefono']);
+        $telefono = $this->telefonoUnico($datos['telefono']);
 
         $cliente = Cliente::create([
             'nombre' => $datos['nombre'],
-            'wa_id' => $waId,
+            'telefono' => $telefono,
             'acepta_avisos' => $datos['acepta_avisos'] ?? false,
         ]);
 
@@ -66,7 +66,7 @@ class ClienteController extends Controller
         ]);
 
         if (isset($datos['telefono'])) {
-            $cliente->wa_id = $this->telefonoUnico($datos['telefono'], $cliente->id);
+            $cliente->telefono = $this->telefonoUnico($datos['telefono'], $cliente->id);
         }
 
         $cliente->fill(array_intersect_key($datos, array_flip(['nombre', 'acepta_avisos'])))->save();
@@ -78,26 +78,6 @@ class ClienteController extends Controller
     public function historial(Cliente $cliente): JsonResponse
     {
         return response()->json($this->armarHistorial($cliente));
-    }
-
-    /** GET /api/web/admin/clientes/{cliente}/mensajes — solo lectura. */
-    public function mensajes(Cliente $cliente): JsonResponse
-    {
-        $eventos = $cliente->eventosWhatsapp()->where('tipo', 'mensaje')->orderBy('created_at')->get();
-
-        return response()->json([
-            'cliente_id' => $cliente->id,
-            'mensajes' => $eventos->map(fn ($e) => [
-                'wamid' => $e->wamid,
-                'direccion' => $e->direccion,
-                'tipo' => data_get($e->payload, 'type', data_get($e->payload, 'plantilla') ? 'plantilla' : null),
-                'texto' => data_get($e->payload, 'text.body')
-                    ?? data_get($e->payload, 'interactive.list_reply.title')
-                    ?? data_get($e->payload, 'interactive.button_reply.title')
-                    ?? (data_get($e->payload, 'plantilla') ? 'Plantilla: '.data_get($e->payload, 'plantilla') : null),
-                'fecha' => Fecha::iso($e->created_at),
-            ])->values(),
-        ]);
     }
 
     /** Resumen usado también por la cuenta de la clienta. */
@@ -120,16 +100,16 @@ class ClienteController extends Controller
 
     private function telefonoUnico(string $telefono, ?int $ignorarId = null): string
     {
-        $waId = Telefono::normalizar($telefono);
+        $telefono = Telefono::normalizar($telefono);
 
-        if (! $waId) {
+        if (! $telefono) {
             throw ValidationException::withMessages(['telefono' => 'El teléfono no es válido.']);
         }
 
-        if (Cliente::where('wa_id', $waId)->when($ignorarId, fn ($q) => $q->whereKeyNot($ignorarId))->exists()) {
+        if (Cliente::where('telefono', $telefono)->when($ignorarId, fn ($q) => $q->whereKeyNot($ignorarId))->exists()) {
             throw ValidationException::withMessages(['telefono' => 'Ya existe una clienta con ese teléfono.']);
         }
 
-        return $waId;
+        return $telefono;
     }
 }

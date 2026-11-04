@@ -3,12 +3,12 @@
 namespace App\Support;
 
 /**
- * Normaliza teléfonos al formato wa_id que usa WhatsApp.
+ * Normaliza teléfonos para que la misma clienta no quede duplicada entre la
+ * web, el panel y la app Android (acordarlo también con el backend móvil).
  *
- * WhatsApp identifica a los números móviles de México como 521 + 10 dígitos.
- * Si la web guardara "3312345678" y el webhook "5213312345678", la misma
- * clienta quedaría duplicada. Por eso todos los canales deben normalizar igual
- * (acordarlo también con el backend móvil).
+ * México: se guardan los 10 dígitos nacionales ("33 1234 5678", "+52 33 1234
+ * 5678" y "+52 1 33 1234 5678" quedan como "3312345678").
+ * Otros países: dígitos del formato internacional sin el "+".
  */
 final class Telefono
 {
@@ -20,17 +20,20 @@ final class Telefono
             return null;
         }
 
-        // 10 dígitos: número nacional de México.
         if (strlen($digitos) === 10) {
-            return '521'.$digitos;
+            return $digitos;
         }
 
-        // 52 + 10 dígitos sin el 1 móvil.
+        // +52 33 1234 5678
         if (strlen($digitos) === 12 && str_starts_with($digitos, '52')) {
-            return '521'.substr($digitos, 2);
+            return substr($digitos, 2);
         }
 
-        // Otros formatos internacionales válidos (E.164 sin el +).
+        // +52 1 33 1234 5678 (formato móvil antiguo)
+        if (strlen($digitos) === 13 && str_starts_with($digitos, '521')) {
+            return substr($digitos, 3);
+        }
+
         if (strlen($digitos) >= 11 && strlen($digitos) <= 15) {
             return $digitos;
         }

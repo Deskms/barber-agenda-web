@@ -11,16 +11,7 @@ use App\Http\Controllers\Api\Web\HuecoController;
 use App\Http\Controllers\Api\Web\MiCuentaController;
 use App\Http\Controllers\Api\Web\ServicioController;
 use App\Http\Controllers\Api\Web\UsuarioController;
-use App\Http\Controllers\Api\WhatsAppWebhookController;
 use Illuminate\Support\Facades\Route;
-
-/*
-|--------------------------------------------------------------------------
-| WhatsApp (Meta Cloud API)
-|--------------------------------------------------------------------------
-*/
-Route::get('/whatsapp/webhook', [WhatsAppWebhookController::class, 'verify']);
-Route::post('/whatsapp/webhook', [WhatsAppWebhookController::class, 'handle']);
 
 /*
 |--------------------------------------------------------------------------
@@ -76,7 +67,6 @@ Route::prefix('web')->group(function () {
             Route::get('clientes/{cliente}', [ClienteController::class, 'show']);
             Route::patch('clientes/{cliente}', [ClienteController::class, 'update']);
             Route::get('clientes/{cliente}/historial', [ClienteController::class, 'historial']);
-            Route::get('clientes/{cliente}/mensajes', [ClienteController::class, 'mensajes']);
 
             Route::get('agenda', [AgendaController::class, 'index']);
             Route::get('agenda/cambios', [AgendaController::class, 'cambios']);
@@ -84,7 +74,6 @@ Route::prefix('web')->group(function () {
 
             Route::get('huecos', [HuecoController::class, 'index']);
             Route::get('huecos/{hueco}/candidatas', [HuecoController::class, 'candidatas']);
-            Route::post('huecos/{hueco}/difundir', [HuecoController::class, 'difundir']);
         });
     });
 });

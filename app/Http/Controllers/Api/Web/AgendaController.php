@@ -46,7 +46,7 @@ class AgendaController extends Controller
             ),
             'huecos' => HuecoResource::collection(
                 Hueco::query()->where('inicio', '<', $hasta)->where('fin', '>', $desde)
-                    ->where('fin', '>', Carbon::now())->with('servicio')->withCount('difusiones')->orderBy('inicio')->get()
+                    ->where('fin', '>', Carbon::now())->with('servicio')->orderBy('inicio')->get()
             ),
         ]);
     }

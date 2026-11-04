@@ -24,7 +24,7 @@ class CitaResource extends JsonResource
             'cliente' => $this->whenLoaded('cliente', fn () => [
                 'id' => $this->cliente->id,
                 'nombre' => $this->cliente->nombre,
-                'telefono' => $this->cliente->wa_id,
+                'telefono' => $this->cliente->telefono,
             ]),
             'bloques' => $this->whenLoaded('bloques', fn () => $this->bloques->map(fn ($b) => [
                 'orden' => $b->orden,

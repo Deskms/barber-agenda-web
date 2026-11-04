@@ -21,7 +21,7 @@ class Cita extends Model
 
     public const ESTADOS = [self::CONFIRMADA, self::CANCELADA, self::COMPLETADA, self::NO_ASISTIO];
 
-    public const ORIGEN_WHATSAPP = 'whatsapp';
+    public const ORIGEN_APP = 'app';
 
     public const ORIGEN_PANEL = 'panel';
 

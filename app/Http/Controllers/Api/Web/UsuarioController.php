@@ -40,21 +40,21 @@ class UsuarioController extends Controller
             'telefono' => ['required_if:rol,'.User::ROL_CLIENTE, 'nullable', 'string', 'max:20'],
         ]);
 
-        $waId = null;
+        $telefono = null;
 
         if ($datos['rol'] === User::ROL_CLIENTE) {
-            $waId = Telefono::normalizar($datos['telefono'] ?? null);
+            $telefono = Telefono::normalizar($datos['telefono'] ?? null);
 
-            if (! $waId) {
+            if (! $telefono) {
                 throw ValidationException::withMessages(['telefono' => 'El teléfono no es válido.']);
             }
 
-            if (Cliente::where('wa_id', $waId)->whereNotNull('user_id')->exists()) {
+            if (Cliente::where('telefono', $telefono)->whereNotNull('user_id')->exists()) {
                 throw ValidationException::withMessages(['telefono' => 'Ese teléfono ya tiene una cuenta.']);
             }
         }
 
-        $usuario = DB::transaction(function () use ($datos, $waId) {
+        $usuario = DB::transaction(function () use ($datos, $telefono) {
             $usuario = User::create([
                 'name' => $datos['nombre'],
                 'email' => $datos['email'],
@@ -63,8 +63,8 @@ class UsuarioController extends Controller
                 'activo' => true,
             ]);
 
-            if ($waId) {
-                $cliente = Cliente::firstOrNew(['wa_id' => $waId]);
+            if ($telefono) {
+                $cliente = Cliente::firstOrNew(['telefono' => $telefono]);
                 $cliente->user_id = $usuario->id;
                 $cliente->nombre = $cliente->nombre ?: $datos['nombre'];
                 $cliente->save();

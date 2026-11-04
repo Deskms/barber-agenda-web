@@ -18,7 +18,7 @@ use Illuminate\Support\Facades\DB;
  * Crear, cancelar, reprogramar y cerrar citas.
  *
  * Toda escritura sobre la agenda pasa por aquí, venga del panel, de la web,
- * de WhatsApp o de la app. Ningún canal escribe citas por su cuenta.
+ * o de la app Android. Ningún canal escribe citas por su cuenta.
  */
 class CitaService
 {
@@ -33,7 +33,7 @@ class CitaService
         Cliente $cliente,
         Servicio $servicio,
         Carbon $inicio,
-        string $origen = Cita::ORIGEN_WHATSAPP,
+        string $origen = Cita::ORIGEN_PANEL,
         ?string $notas = null,
     ): Cita {
         return DB::transaction(function () use ($cliente, $servicio, $inicio, $origen, $notas) {

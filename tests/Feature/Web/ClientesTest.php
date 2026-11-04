@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Web;
 
-use App\Models\Cliente;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Tests\Concerns\CreaAgenda;
@@ -17,7 +16,7 @@ class ClientesTest extends TestCase
         $this->como($this->admin());
 
         $id = $this->postJson('/api/web/admin/clientes', ['nombre' => 'Lucía', 'telefono' => '(33) 1111-2222'])
-            ->assertCreated()->assertJsonPath('data.telefono', '5213311112222')->assertJsonPath('data.acepta_avisos', false)->json('data.id');
+            ->assertCreated()->assertJsonPath('data.telefono', '3311112222')->assertJsonPath('data.acepta_avisos', false)->json('data.id');
 
         $this->postJson('/api/web/admin/clientes', ['nombre' => 'Otra', 'telefono' => '3311112222'])
             ->assertUnprocessable()->assertJsonValidationErrors(['telefono']);
@@ -42,22 +41,5 @@ class ClientesTest extends TestCase
             ->assertJsonPath('resumen.visitas', 1)->assertJsonPath('resumen.ultima_visita', '2026-11-10T09:00:00-06:00');
 
         $this->como($ana)->getJson('/api/web/mi/historial')->assertOk()->assertJsonPath('resumen.visitas', 1)->assertJsonCount(1, 'citas');
-    }
-
-    public function test_historial_de_conversacion_a_partir_del_webhook(): void
-    {
-        $cliente = Cliente::factory()->create(['wa_id' => '5213312345678']);
-
-        $this->postJson('/api/whatsapp/webhook', [
-            'entry' => [['changes' => [['value' => [
-                'contacts' => [['profile' => ['name' => 'Ana']]],
-                'messages' => [['id' => 'wamid.ABC', 'from' => '5213312345678', 'type' => 'text', 'text' => ['body' => 'Hola, ¿tienen lugar el sábado?']]],
-            ]]]]],
-        ])->assertOk();
-
-        $this->como($this->admin())->getJson("/api/web/admin/clientes/{$cliente->id}/mensajes")->assertOk()
-            ->assertJsonCount(1, 'mensajes')
-            ->assertJsonPath('mensajes.0.direccion', 'entrante')
-            ->assertJsonPath('mensajes.0.texto', 'Hola, ¿tienen lugar el sábado?');
     }
 }

@@ -18,7 +18,7 @@ return new class extends Migration
             $table->dateTime('inicio');
             $table->dateTime('fin');
             $table->string('estado')->default('confirmada');
-            $table->string('origen')->default('whatsapp');
+            $table->string('origen')->default('panel');
             $table->dateTime('cancelada_en')->nullable();
             $table->timestamps();
 

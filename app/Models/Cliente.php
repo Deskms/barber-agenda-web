@@ -16,7 +16,7 @@ class Cliente extends Model
 
     protected $table = 'clientes';
 
-    protected $fillable = ['user_id', 'wa_id', 'nombre', 'acepta_avisos'];
+    protected $fillable = ['user_id', 'telefono', 'nombre', 'acepta_avisos'];
 
     protected function casts(): array
     {
@@ -33,17 +33,7 @@ class Cliente extends Model
         return $this->hasMany(Cita::class);
     }
 
-    public function eventosWhatsapp(): HasMany
-    {
-        return $this->hasMany(EventoWhatsapp::class);
-    }
-
-    public function difusiones(): HasMany
-    {
-        return $this->hasMany(Difusion::class);
-    }
-
-    /** Clientas que dieron consentimiento para recibir avisos de espacios liberados. */
+    /** Clientas que aceptaron avisos de citas de última hora (horarios liberados). */
     public function scopeNotificables(Builder $q): Builder
     {
         return $q->where('acepta_avisos', true);

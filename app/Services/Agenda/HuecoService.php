@@ -26,7 +26,7 @@ class HuecoService
 
     /**
      * Elegibles para el aviso: dieron consentimiento, no son quien liberó el
-     * hueco, no tienen otra cita que choque y no recibieron ya este hueco.
+     * hueco y no tienen otra cita que choque. El aviso lo muestra la app móvil.
      *
      * @return Collection<int, Cliente>
      */
@@ -39,13 +39,10 @@ class HuecoService
             ->queChocanCon($hueco->inicio, $hueco->fin)
             ->pluck('cliente_id');
 
-        $yaAvisadas = $hueco->difusiones()->pluck('cliente_id');
-
         return Cliente::query()
             ->notificables()
             ->when($hueco->cita, fn ($q) => $q->whereKeyNot($hueco->cita->cliente_id))
             ->whereNotIn('id', $ocupadas)
-            ->whereNotIn('id', $yaAvisadas)
             ->orderBy('nombre')
             ->get();
     }

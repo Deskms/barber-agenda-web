@@ -17,7 +17,6 @@ class HuecoResource extends JsonResource
             'cita_id' => $this->cita_id,
             'servicio' => $this->servicio ? ['id' => $this->servicio->id, 'nombre' => $this->servicio->nombre] : null,
             'sigue_libre' => $this->when(isset($this->sigue_libre), fn () => (bool) $this->sigue_libre),
-            'difusiones_enviadas' => $this->whenCounted('difusiones'),
         ];
     }
 }

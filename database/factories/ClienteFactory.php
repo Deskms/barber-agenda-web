@@ -13,7 +13,7 @@ class ClienteFactory extends Factory
     public function definition(): array
     {
         return [
-            'wa_id' => '521'.fake()->unique()->numerify('33########'),
+            'telefono' => fake()->unique()->numerify('33########'),
             'nombre' => fake()->firstName(),
             'acepta_avisos' => false,
         ];

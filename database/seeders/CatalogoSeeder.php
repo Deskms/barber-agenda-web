@@ -53,18 +53,13 @@ class CatalogoSeeder extends Seeder
 
         // Clientas de prueba con números inventados. Una sin consentimiento de avisos.
         $clientas = [
-            ['wa_id' => '5213331111111', 'nombre' => 'Ana',      'acepta_avisos' => true],
-            ['wa_id' => '5213332222222', 'nombre' => 'Rocío',    'acepta_avisos' => true],
-            ['wa_id' => '5213333333333', 'nombre' => 'Fernanda', 'acepta_avisos' => false],
+            ['telefono' => '3331111111', 'nombre' => 'Ana',      'acepta_avisos' => true],
+            ['telefono' => '3332222222', 'nombre' => 'Rocío',    'acepta_avisos' => true],
+            ['telefono' => '3333333333', 'nombre' => 'Fernanda', 'acepta_avisos' => false],
         ];
 
-        // El número personal autorizado en Meta se toma del .env, nunca del código.
-        if ($numero = env('WHATSAPP_NUMERO_PRUEBA')) {
-            $clientas[] = ['wa_id' => $numero, 'nombre' => 'Número de prueba', 'acepta_avisos' => true];
-        }
-
         foreach ($clientas as $clienta) {
-            Cliente::firstOrCreate(['wa_id' => $clienta['wa_id']], $clienta);
+            Cliente::firstOrCreate(['telefono' => $clienta['telefono']], $clienta);
         }
     }
 }

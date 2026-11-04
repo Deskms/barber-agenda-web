@@ -11,8 +11,8 @@ use Illuminate\Support\Carbon;
 /**
  * Un intervalo de la agenda quedó libre (cancelación o reprogramación).
  *
- * Este evento mantiene separada la lógica de citas de la lógica de WhatsApp:
- * la agenda no sabe que existe WhatsApp, solo anuncia que hay un hueco.
+ * Este evento mantiene separada la agenda de quien aprovecha el hueco: la
+ * agenda solo anuncia que hay un horario libre (citas de última hora).
  *
  * Al reprogramar, la cita ya tiene su horario nuevo; por eso el evento puede
  * llevar el intervalo anterior de forma explícita.

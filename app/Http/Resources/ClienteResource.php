@@ -12,7 +12,7 @@ class ClienteResource extends JsonResource
         return [
             'id' => $this->id,
             'nombre' => $this->nombre,
-            'telefono' => $this->wa_id,
+            'telefono' => $this->telefono,
             'acepta_avisos' => (bool) $this->acepta_avisos,
             'tiene_cuenta' => $this->user_id !== null,
             'citas_count' => $this->whenCounted('citas'),

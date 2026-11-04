@@ -1,8 +1,8 @@
 # Prueba de integración HTTP real contra php artisan serve (base SQLite local, catálogo del seeder)
-# Ejecutada: 2026-11-03 19:27 CST | Horario del seeder: martes a sábado 10:00-19:00
+# Ejecutada: 2026-11-03 20:07 CST | Horario del seeder: martes a sábado 10:00-19:00
 
 POST /auth/login (dueña) → HTTP 200
-   {"token": "1|v318…(oculto)", "tipo": "Bearer", "usuario": {"id": 1, "nombre": "Dueña", "email": "duena@barberagenda.test", "rol": "admin", "activo": true, "cliente": null}}
+   {"token": "1|6isN…(oculto)", "tipo": "Bearer", "usuario": {"id": 1, "nombre": "Dueña", "email": "duena@barberagenda.test", "rol": "admin", "activo": true, "cliente": null}}
 
 OPTIONS /servicios con Origin http://localhost:5173 (CORS) → HTTP 204 | Access-Control-Allow-Origin: http://localhost:5173
 
@@ -31,6 +31,6 @@ GET /citas sin token → HTTP 401
 GET /admin/agenda?fecha=2026-11-10 (dueña) → HTTP 200
 
 Registros guardados en la base de datos (consulta directa a la tabla citas):
- #1 Tinte 2026-11-10 10:00-13:00 Clienta 1 (confirmada, origen panel)
- #2 Corte de hombre 2026-11-10 10:30-11:30 Clienta 2 (confirmada, origen panel)
- #3 Corte de hombre 2026-11-10 11:30-12:30 Clienta 3 (confirmada, origen panel)
+ #1 Tinte 2026-11-10 10:00-13:00 Clienta 1 tel. 3300000011 (confirmada, origen panel)
+ #2 Corte de hombre 2026-11-10 10:30-11:30 Clienta 2 tel. 3300000022 (confirmada, origen panel)
+ #3 Corte de hombre 2026-11-10 11:30-12:30 Clienta 3 tel. 3300000033 (confirmada, origen panel)

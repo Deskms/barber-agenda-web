@@ -30,23 +30,23 @@ class AuthTest extends TestCase
         $respuesta->assertCreated()
             ->assertJsonPath('tipo', 'Bearer')
             ->assertJsonPath('usuario.rol', 'cliente')
-            ->assertJsonPath('usuario.cliente.telefono', '5213312345678');
+            ->assertJsonPath('usuario.cliente.telefono', '3312345678');
         $this->assertNotEmpty($respuesta->json('token'));
 
         $usuario = User::where('email', 'ana@example.com')->firstOrFail();
-        $this->assertDatabaseHas('clientes', ['wa_id' => '5213312345678', 'user_id' => $usuario->id, 'acepta_avisos' => true]);
+        $this->assertDatabaseHas('clientes', ['telefono' => '3312345678', 'user_id' => $usuario->id, 'acepta_avisos' => true]);
     }
 
-    public function test_registro_vincula_a_la_clienta_que_ya_escribio_por_whatsapp(): void
+    public function test_registro_vincula_a_la_clienta_que_ya_registro_la_duena(): void
     {
-        $existente = Cliente::factory()->create(['wa_id' => '5213312345678', 'nombre' => 'Ana WhatsApp']);
+        $existente = Cliente::factory()->create(['telefono' => '3312345678', 'nombre' => 'Ana (panel)']);
 
-        $this->postJson('/api/web/auth/registro', $this->datosRegistro(['telefono' => '3312345678']))->assertCreated();
+        $this->postJson('/api/web/auth/registro', $this->datosRegistro(['telefono' => '+52 33 1234 5678']))->assertCreated();
 
         $this->assertSame(1, Cliente::count());
         $existente->refresh();
         $this->assertNotNull($existente->user_id);
-        $this->assertSame('Ana WhatsApp', $existente->nombre);
+        $this->assertSame('Ana (panel)', $existente->nombre);
     }
 
     public function test_registro_valida_telefono_email_y_contrasena(): void

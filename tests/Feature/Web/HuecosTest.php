@@ -5,7 +5,6 @@ namespace Tests\Feature\Web;
 use App\Models\Cliente;
 use App\Models\Hueco;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Http;
 use Tests\Concerns\CreaAgenda;
 use Tests\TestCase;
 
@@ -40,7 +39,13 @@ class HuecosTest extends TestCase
         $this->postJson("/api/web/citas/{$id}/cancelar")->assertOk();
 
         $this->huecoId = Hueco::firstOrFail()->id;
-        config(['whatsapp.access_token' => 'token-de-prueba', 'whatsapp.phone_id' => '123456']);
+    }
+
+    public function test_un_hueco_deja_de_estar_libre_cuando_alguien_lo_toma(): void
+    {
+        $this->agendarComoAdmin($this->admin(), $this->servicioSimple('Otro corte'), Cliente::factory()->create(), '2026-11-10 10:00')->assertCreated();
+
+        $this->getJson('/api/web/admin/huecos')->assertOk()->assertJsonPath('data.0.sigue_libre', false);
     }
 
     public function test_lista_huecos_y_candidatas_elegibles(): void
@@ -54,42 +59,5 @@ class HuecosTest extends TestCase
         $this->assertFalse($ids->contains($this->sinConsentimiento->id));
         $this->assertFalse($ids->contains($this->conCita->id));
         $this->assertCount(1, $ids);
-    }
-
-    public function test_difundir_envia_registra_y_no_repite(): void
-    {
-        Http::fake(['graph.facebook.com/*' => Http::response(['messages' => [['id' => 'wamid.ENVIO1']]], 200)]);
-
-        $this->postJson("/api/web/admin/huecos/{$this->huecoId}/difundir", ['cliente_ids' => [$this->elegible->id, $this->sinConsentimiento->id]])
-            ->assertOk()->assertJsonPath('enviadas', [$this->elegible->id])->assertJsonCount(1, 'omitidas');
-
-        $this->assertDatabaseHas('difusiones', ['espacio_liberado_id' => $this->huecoId, 'cliente_id' => $this->elegible->id, 'estado_envio' => 'enviado', 'wamid' => 'wamid.ENVIO1']);
-        $this->assertDatabaseHas('eventos_whatsapp', ['wamid' => 'wamid.ENVIO1', 'direccion' => 'saliente', 'cliente_id' => $this->elegible->id]);
-        Http::assertSentCount(1);
-
-        $this->postJson("/api/web/admin/huecos/{$this->huecoId}/difundir", ['cliente_ids' => [$this->elegible->id]])
-            ->assertOk()->assertJsonPath('enviadas', [])->assertJsonCount(1, 'omitidas');
-        Http::assertSentCount(1);
-        $this->assertDatabaseCount('difusiones', 1);
-    }
-
-    public function test_un_envio_rechazado_por_meta_queda_como_fallido(): void
-    {
-        Http::fake(['graph.facebook.com/*' => Http::response(['error' => ['message' => 'Template not approved', 'code' => 132001]], 400)]);
-
-        $this->postJson("/api/web/admin/huecos/{$this->huecoId}/difundir", ['cliente_ids' => [$this->elegible->id]])
-            ->assertOk()->assertJsonPath('fallidas.0.error', 'Template not approved');
-        $this->assertDatabaseHas('difusiones', ['cliente_id' => $this->elegible->id, 'estado_envio' => 'fallido']);
-    }
-
-    public function test_no_se_difunde_sin_whatsapp_configurado_ni_un_hueco_ya_ocupado(): void
-    {
-        config(['whatsapp.access_token' => null]);
-        $this->postJson("/api/web/admin/huecos/{$this->huecoId}/difundir", ['cliente_ids' => [$this->elegible->id]])->assertStatus(503);
-
-        config(['whatsapp.access_token' => 'token-de-prueba']);
-        $this->agendarComoAdmin($this->admin(), $this->servicioSimple('Otro corte'), Cliente::factory()->create(), '2026-11-10 10:00')->assertCreated();
-        $this->postJson("/api/web/admin/huecos/{$this->huecoId}/difundir", ['cliente_ids' => [$this->elegible->id]])->assertStatus(409);
-        $this->assertDatabaseCount('difusiones', 0);
     }
 }

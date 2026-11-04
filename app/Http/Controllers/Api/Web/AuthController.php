@@ -17,8 +17,8 @@ class AuthController extends Controller
 {
     /**
      * POST /api/web/auth/registro
-     * Crea la cuenta de una clienta. Si su teléfono ya existe porque escribió
-     * por WhatsApp, se vincula a esa clienta en lugar de duplicarla.
+     * Crea la cuenta de una clienta. Si la dueña ya la había registrado con ese
+     * teléfono, se vincula a esa clienta en lugar de duplicarla.
      */
     public function registro(Request $request): JsonResponse
     {
@@ -34,15 +34,15 @@ class AuthController extends Controller
             'acepta_avisos' => ['sometimes', 'boolean'],
         ]);
 
-        $waId = Telefono::normalizar($datos['telefono']);
+        $telefono = Telefono::normalizar($datos['telefono']);
 
-        $existente = Cliente::where('wa_id', $waId)->first();
+        $existente = Cliente::where('telefono', $telefono)->first();
 
         if ($existente && $existente->user_id !== null) {
             throw ValidationException::withMessages(['telefono' => 'Ese teléfono ya tiene una cuenta.']);
         }
 
-        $usuario = DB::transaction(function () use ($datos, $waId, $existente) {
+        $usuario = DB::transaction(function () use ($datos, $telefono, $existente) {
             $usuario = User::create([
                 'name' => $datos['nombre'],
                 'email' => $datos['email'],
@@ -51,7 +51,7 @@ class AuthController extends Controller
                 'activo' => true,
             ]);
 
-            $cliente = $existente ?? new Cliente(['wa_id' => $waId]);
+            $cliente = $existente ?? new Cliente(['telefono' => $telefono]);
             $cliente->user_id = $usuario->id;
             $cliente->nombre = $cliente->nombre ?: $datos['nombre'];
 

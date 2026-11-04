@@ -13,9 +13,10 @@ return new class extends Migration
     {
         Schema::create('clientes', function (Blueprint $table) {
             $table->id();
-            $table->string('wa_id')->unique();
+            $table->string('telefono', 15)->unique();
             $table->string('nombre')->nullable();
-            $table->boolean('acepta_avisos')->default(true);
+            // Consentimiento explícito para avisos de citas de última hora.
+            $table->boolean('acepta_avisos')->default(false);
             $table->timestamps();
         });
     }
