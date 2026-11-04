@@ -7,6 +7,11 @@ use App\Models\HorarioAtencion;
 use App\Models\Servicio;
 use Illuminate\Database\Seeder;
 
+/**
+ * Catálogo para desarrollo y pruebas locales. Es reejecutable: no duplica.
+ * No usar en producción: los precios, duraciones y etapas son de ejemplo y
+ * deben confirmarse con la dueña.
+ */
 class CatalogoSeeder extends Seeder
 {
     public function run(): void
@@ -16,10 +21,26 @@ class CatalogoSeeder extends Seeder
             ['nombre' => 'Peinado',          'duracion_minutos' => 90,  'precio' => 350],
             ['nombre' => 'Maquillaje',       'duracion_minutos' => 120, 'precio' => 800],
             ['nombre' => 'Manicura',         'duracion_minutos' => 45,  'precio' => 250],
+            ['nombre' => 'Corte de hombre',  'duracion_minutos' => 60,  'precio' => 150],
         ];
 
         foreach ($servicios as $servicio) {
             Servicio::firstOrCreate(['nombre' => $servicio['nombre']], $servicio);
+        }
+
+        // Servicio con tiempo de procesamiento: durante el reposo del tinte la
+        // estilista puede atender a otra clienta. Etapas de EJEMPLO.
+        $tinte = Servicio::firstOrCreate(
+            ['nombre' => 'Tinte'],
+            ['duracion_minutos' => 180, 'precio' => 900],
+        );
+
+        if ($tinte->etapas()->doesntExist()) {
+            $tinte->etapas()->createMany([
+                ['orden' => 1, 'nombre' => 'Aplicación del tinte', 'duracion_minutos' => 30,  'ocupa_estilista' => true],
+                ['orden' => 2, 'nombre' => 'Procesamiento',        'duracion_minutos' => 120, 'ocupa_estilista' => false],
+                ['orden' => 3, 'nombre' => 'Enjuague y secado',    'duracion_minutos' => 30,  'ocupa_estilista' => true],
+            ]);
         }
 
         // Martes a sábado, 10:00 a 19:00. 0 = domingo ... 6 = sábado.
@@ -30,14 +51,17 @@ class CatalogoSeeder extends Seeder
             );
         }
 
-        // Clientas de prueba. Números inventados salvo el propio, que es el
-        // destinatario autorizado en Meta.
+        // Clientas de prueba con números inventados. Una sin consentimiento de avisos.
         $clientas = [
-            ['wa_id' => '5213334895913', 'nombre' => 'Domi (pruebas)', 'acepta_avisos' => true],
-            ['wa_id' => '5213331111111', 'nombre' => 'Ana',            'acepta_avisos' => true],
-            ['wa_id' => '5213332222222', 'nombre' => 'Rocío',          'acepta_avisos' => true],
-            ['wa_id' => '5213333333333', 'nombre' => 'Fernanda',       'acepta_avisos' => false],
+            ['wa_id' => '5213331111111', 'nombre' => 'Ana',      'acepta_avisos' => true],
+            ['wa_id' => '5213332222222', 'nombre' => 'Rocío',    'acepta_avisos' => true],
+            ['wa_id' => '5213333333333', 'nombre' => 'Fernanda', 'acepta_avisos' => false],
         ];
+
+        // El número personal autorizado en Meta se toma del .env, nunca del código.
+        if ($numero = env('WHATSAPP_NUMERO_PRUEBA')) {
+            $clientas[] = ['wa_id' => $numero, 'nombre' => 'Número de prueba', 'acepta_avisos' => true];
+        }
 
         foreach ($clientas as $clienta) {
             Cliente::firstOrCreate(['wa_id' => $clienta['wa_id']], $clienta);
