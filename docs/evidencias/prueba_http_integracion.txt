@@ -1,0 +1,36 @@
+# Prueba de integración HTTP real contra php artisan serve (base SQLite local, catálogo del seeder)
+# Ejecutada: 2026-11-03 20:07 CST | Horario del seeder: martes a sábado 10:00-19:00
+
+POST /auth/login (dueña) → HTTP 200
+   {"token": "1|6isN…(oculto)", "tipo": "Bearer", "usuario": {"id": 1, "nombre": "Dueña", "email": "duena@barberagenda.test", "rol": "admin", "activo": true, "cliente": null}}
+
+OPTIONS /servicios con Origin http://localhost:5173 (CORS) → HTTP 204 | Access-Control-Allow-Origin: http://localhost:5173
+
+GET /servicios (catálogo público) → HTTP 200
+   1. Corte de cabello — 60 min — Corte de cabello [activa] 60m
+   5. Corte de hombre — 60 min — Corte de hombre [activa] 60m
+   4. Manicura — 45 min — Manicura [activa] 45m
+   3. Maquillaje — 120 min — Maquillaje [activa] 120m
+   2. Peinado — 90 min — Peinado [activa] 90m
+   6. Tinte — 180 min — Aplicación del tinte [activa] 30m, Procesamiento [espera] 120m, Enjuague y secado [activa] 30m
+
+POST /admin/clientes x3 → clientas [4, 5, 6] registradas
+
+POST /citas Tinte 2026-11-10 10:00 (tinte de 3 horas) → HTTP 201
+     Aplicación del tinte: 10:00-10:30 ocupa a la estilista
+     Procesamiento: 10:30-12:30 procesamiento (estilista libre)
+     Enjuague y secado: 12:30-13:00 ocupa a la estilista
+POST /citas Corte de hombre 2026-11-10 10:30 (durante el procesamiento del tinte) → HTTP 201
+     Corte de hombre: 10:30-11:30 ocupa a la estilista
+POST /citas Corte de hombre 2026-11-10 11:30 (durante el procesamiento del tinte) → HTTP 201
+     Corte de hombre: 11:30-12:30 ocupa a la estilista
+POST /citas Corte de hombre 2026-11-10 12:00 (choca con el enjuague 12:30-13:00) → HTTP 409
+     La estilista está ocupada en ese horario. | motivo: estilista_ocupada | alternativas: ['13:00', '13:15', '13:30']
+
+GET /citas sin token → HTTP 401
+GET /admin/agenda?fecha=2026-11-10 (dueña) → HTTP 200
+
+Registros guardados en la base de datos (consulta directa a la tabla citas):
+ #1 Tinte 2026-11-10 10:00-13:00 Clienta 1 tel. 3300000011 (confirmada, origen panel)
+ #2 Corte de hombre 2026-11-10 10:30-11:30 Clienta 2 tel. 3300000022 (confirmada, origen panel)
+ #3 Corte de hombre 2026-11-10 11:30-12:30 Clienta 3 tel. 3300000033 (confirmada, origen panel)

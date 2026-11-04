@@ -3,23 +3,20 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
 {
-    use WithoutModelEvents;
-
-    /**
-     * Seed the application's database.
-     */
     public function run(): void
     {
-        // User::factory(10)->create();
+        $this->call(CatalogoSeeder::class);
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        // La cuenta de la dueña solo se crea si se definió en el .env.
+        if (env('ADMIN_EMAIL') && env('ADMIN_PASSWORD')) {
+            User::updateOrCreate(
+                ['email' => env('ADMIN_EMAIL')],
+                ['name' => 'Dueña', 'password' => env('ADMIN_PASSWORD'), 'rol' => User::ROL_ADMIN, 'activo' => true],
+            );
+        }
     }
 }

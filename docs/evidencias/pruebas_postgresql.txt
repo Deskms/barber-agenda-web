@@ -1,0 +1,16 @@
+# Suite de pruebas sobre PostgreSQL 16.15
+# Ejecutada: 2026-11-03 20:06 CST
+
+  Tests:    52 passed (300 assertions)
+  Duration: 5.59s
+
+
+# Prueba de concurrencia: 10 procesos intentan agendar el mismo corte a la misma hora (PostgreSQL)
+      1 OK
+      9 RECHAZADA: estilista_ocupada
+Citas confirmadas resultantes: 1
+
+# migrate:fresh --seed y migrate:rollback completo sobre PostgreSQL (criterio de SCRUM-13)
+migrate:fresh --seed: OK
+Tablas restantes en public tras el rollback: 0
+migrate de nuevo: OK

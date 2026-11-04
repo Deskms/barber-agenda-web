@@ -1,0 +1,167 @@
+# Suite de pruebas sobre SQLite en memoria (configuración de phpunit.xml)
+# Ejecutada: 2026-11-03 20:06 CST · PHP 8.4.27 · Laravel 13.31.0
+
+PHPUnit 12.5.35 by Sebastian Bergmann and contributors.
+
+Runtime:       PHP 8.4.27
+Configuration: phpunit.xml
+
+
+   PASS  Tests\Unit\ExampleTest
+  ✓ that true is true
+
+   PASS  Tests\Unit\TelefonoTest
+  ✓ normaliza a diez digitos en mexico                                   0.01s  
+
+   PASS  Tests\Feature\ExampleTest
+  ✓ the application returns a successful response                        0.12s  
+
+   PASS  Tests\Feature\Web\AgendaTest
+  ✓ agenda del dia y de la semana                                        0.27s  
+  ✓ cambios devuelve solo lo modificado desde la ultima consulta         0.10s  
+  ✓ la duena configura horarios de atencion                              0.04s  
+
+   PASS  Tests\Feature\Web\AuthTest
+  ✓ registro crea cuenta de clienta y devuelve token                     0.04s  
+  ✓ registro vincula a la clienta que ya registro la duena               0.03s  
+  ✓ registro valida telefono email y contrasena                          0.03s  
+  ✓ un telefono con cuenta no se registra dos veces                      0.04s  
+  ✓ login correcto y fallido                                             0.04s  
+  ✓ una cuenta desactivada no puede iniciar sesion                       0.03s  
+  ✓ logout revoca el token                                               0.04s  
+
+   PASS  Tests\Feature\Web\BloqueosTest
+  ✓ un bloqueo impide agendar y quita horarios                           0.12s  
+  ✓ el bloqueo avisa de citas afectadas sin cancelarlas                  0.06s  
+  ✓ eliminar el bloqueo libera la agenda y se puede bloquear un dia com… 0.08s  
+  ✓ valida el bloqueo                                                    0.03s  
+
+   PASS  Tests\Feature\Web\CitasTest
+  ✓ una clienta agenda su cita y queda guardada                          0.05s  
+  ✓ ejemplo del martes tinte y dos cortes traslapados compatibles        0.08s  
+  ✓ dos cortes al mismo tiempo son incompatibles y se ofrecen alternati… 0.08s  
+  ✓ un corte que choca con una etapa activa del tinte se rechaza         0.10s  
+  ✓ dos tintes solo se traslapan si sus etapas activas no chocan         0.11s  
+  ✓ rechaza horarios fuera de atencion dias cerrados y el pasado         0.09s  
+  ✓ respeta el maximo configurable de clientas simultaneas               0.10s  
+  ✓ validaciones de cita                                                 0.05s  
+  ✓ una clienta solo ve sus citas                                        0.08s  
+  ✓ cancelar libera el horario registra el hueco y es idempotente        0.07s  
+  ✓ una clienta no cancela citas ajenas ni citas que ya empezaron        0.07s  
+  ✓ reprogramar mueve la cita y libera el horario anterior               0.10s  
+  ✓ la duena registra la visita y una cita completada no se cancela      0.06s  
+
+   PASS  Tests\Feature\Web\ClientesTest
+  ✓ la duena registra y edita clientas con consentimiento                0.05s  
+  ✓ historial cuenta las visitas completadas                             0.06s  
+
+   PASS  Tests\Feature\Web\DisponibilidadTest
+  ✓ ofrece todos los inicios de un dia libre                             0.04s  
+  ✓ un dia sin atencion no tiene horarios                                0.03s  
+  ✓ un corte agendado quita los horarios que chocan                      0.06s  
+  ✓ durante el procesamiento de un tinte se ofrecen cortes               0.07s  
+  ✓ un dia lleno no ofrece horarios                                      0.21s  
+  ✓ no ofrece horarios que ya pasaron                                    0.04s  
+  ✓ valida los parametros                                                0.03s  
+
+   PASS  Tests\Feature\Web\HuecosTest
+  ✓ un hueco deja de estar libre cuando alguien lo toma                  0.11s  
+  ✓ lista huecos y candidatas elegibles                                  0.10s  
+
+   PASS  Tests\Feature\Web\PermisosTest
+  ✓ las rutas protegidas piden token                                     0.04s  
+  ✓ una clienta no entra a rutas de administracion                       0.04s  
+  ✓ la duena si entra y no usa rutas de clienta                          0.03s  
+  ✓ un token de cuenta desactivada deja de servir                        0.03s  
+  ✓ la duena administra usuarios y desactivar revoca tokens              0.05s  
+
+   PASS  Tests\Feature\Web\ServiciosTest
+  ✓ la duena crea un servicio con etapas y la duracion es la suma        0.05s  
+  ✓ un servicio sin etapas tiene una sola etapa activa                   0.03s  
+  ✓ valida los datos del servicio                                        0.04s  
+  ✓ editar etapas no cambia citas ya agendadas                           0.06s  
+  ✓ eliminar desactiva y lo retira del catalogo publico                  0.04s  
+  ✓ el catalogo publico muestra servicios activos                        0.03s  
+
+  Tests:    52 passed (300 assertions)
+  Duration: 3.47s
+
+Time: 00:03.376, Memory: 66.50 MB
+
+Agenda (Tests\Feature\Web\Agenda)
+ ✔ Agenda del dia y de la semana
+ ✔ Cambios devuelve solo lo modificado desde la ultima consulta
+ ✔ La duena configura horarios de atencion
+
+Auth (Tests\Feature\Web\Auth)
+ ✔ Registro crea cuenta de clienta y devuelve token
+ ✔ Registro vincula a la clienta que ya registro la duena
+ ✔ Registro valida telefono email y contrasena
+ ✔ Un telefono con cuenta no se registra dos veces
+ ✔ Login correcto y fallido
+ ✔ Una cuenta desactivada no puede iniciar sesion
+ ✔ Logout revoca el token
+
+Bloqueos (Tests\Feature\Web\Bloqueos)
+ ✔ Un bloqueo impide agendar y quita horarios
+ ✔ El bloqueo avisa de citas afectadas sin cancelarlas
+ ✔ Eliminar el bloqueo libera la agenda y se puede bloquear un dia completo
+ ✔ Valida el bloqueo
+
+Citas (Tests\Feature\Web\Citas)
+ ✔ Una clienta agenda su cita y queda guardada
+ ✔ Ejemplo del martes tinte y dos cortes traslapados compatibles
+ ✔ Dos cortes al mismo tiempo son incompatibles y se ofrecen alternativas
+ ✔ Un corte que choca con una etapa activa del tinte se rechaza
+ ✔ Dos tintes solo se traslapan si sus etapas activas no chocan
+ ✔ Rechaza horarios fuera de atencion dias cerrados y el pasado
+ ✔ Respeta el maximo configurable de clientas simultaneas
+ ✔ Validaciones de cita
+ ✔ Una clienta solo ve sus citas
+ ✔ Cancelar libera el horario registra el hueco y es idempotente
+ ✔ Una clienta no cancela citas ajenas ni citas que ya empezaron
+ ✔ Reprogramar mueve la cita y libera el horario anterior
+ ✔ La duena registra la visita y una cita completada no se cancela
+
+Clientes (Tests\Feature\Web\Clientes)
+ ✔ La duena registra y edita clientas con consentimiento
+ ✔ Historial cuenta las visitas completadas
+
+Disponibilidad (Tests\Feature\Web\Disponibilidad)
+ ✔ Ofrece todos los inicios de un dia libre
+ ✔ Un dia sin atencion no tiene horarios
+ ✔ Un corte agendado quita los horarios que chocan
+ ✔ Durante el procesamiento de un tinte se ofrecen cortes
+ ✔ Un dia lleno no ofrece horarios
+ ✔ No ofrece horarios que ya pasaron
+ ✔ Valida los parametros
+
+Example (Tests\Feature\Example)
+ ✔ The application returns a successful response
+
+Example (Tests\Unit\Example)
+ ✔ That true is true
+
+Huecos (Tests\Feature\Web\Huecos)
+ ✔ Un hueco deja de estar libre cuando alguien lo toma
+ ✔ Lista huecos y candidatas elegibles
+
+Permisos (Tests\Feature\Web\Permisos)
+ ✔ Las rutas protegidas piden token
+ ✔ Una clienta no entra a rutas de administracion
+ ✔ La duena si entra y no usa rutas de clienta
+ ✔ Un token de cuenta desactivada deja de servir
+ ✔ La duena administra usuarios y desactivar revoca tokens
+
+Servicios (Tests\Feature\Web\Servicios)
+ ✔ La duena crea un servicio con etapas y la duracion es la suma
+ ✔ Un servicio sin etapas tiene una sola etapa activa
+ ✔ Valida los datos del servicio
+ ✔ Editar etapas no cambia citas ya agendadas
+ ✔ Eliminar desactiva y lo retira del catalogo publico
+ ✔ El catalogo publico muestra servicios activos
+
+Telefono (Tests\Unit\Telefono)
+ ✔ Normaliza a diez digitos en mexico
+
+OK (52 tests, 300 assertions)
