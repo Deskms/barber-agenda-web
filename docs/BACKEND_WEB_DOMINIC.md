@@ -2,6 +2,8 @@
 
 **Responsable:** Dominic (Adrián Dominic Hernández Esqueda) · **Rama:** `feature/backend-web-dominic` · **Fecha:** 3 de noviembre de 2026
 
+Barber Agenda tiene dos canales: la **página web** (frontend de Franc sobre este backend) y la **app Android** (frontend de Rodri sobre el backend móvil de José). **El sistema no usa WhatsApp.**
+
 Este documento describe el backend que consume el frontend web de Franc. Los contratos para el resto del equipo están en:
 
 - [INTEGRACION_FRONTEND_WEB_FRANC.md](INTEGRACION_FRONTEND_WEB_FRANC.md) — frontend web (Franc).
@@ -12,44 +14,38 @@ Este documento describe el backend que consume el frontend web de Franc. Los con
 
 ## 1. Arquitectura
 
-Monolito modular en **Laravel 13.31 sobre PHP 8.4**, como define `docs/arquitectura.md`. La API es el único componente que escribe en la base de datos; el panel web, WhatsApp y la app móvil solo envían intenciones.
+Monolito modular en **Laravel 13.31 sobre PHP 8.4**. La API es el único componente que escribe en la base de datos; la web y la app solo envían peticiones.
 
 ```
-Frontend web (Franc) ──HTTP/JSON + Bearer──►  /api/web/*      ─┐
-WhatsApp (Meta Cloud API) ──webhook────────►  /api/whatsapp/* ─┼─► Servicios de dominio ─► PostgreSQL
-Backend móvil (José) ──(sus propios endpoints, por coordinar)──┘   (Agenda, Difusión)
+Página web (Franc) ──HTTP/JSON + Bearer──►  /api/web/*  ─┐
+                                                          ├─► Servicios de dominio (Agenda) ─► PostgreSQL
+App Android (Rodri) ──► backend móvil (José, por definir) ┘
 ```
-
-Capas:
 
 | Capa | Ubicación | Qué hace |
 |---|---|---|
 | Rutas | `routes/api.php` | Prefijo `/api/web`, middleware `auth:sanctum`, `activo` y `rol:admin` / `rol:cliente`. |
 | Controladores | `app/Http/Controllers/Api/Web/` | Validan la entrada, llaman a los servicios y devuelven recursos JSON. No calculan disponibilidad. |
 | Recursos JSON | `app/Http/Resources/` | Formato estable de salida; fechas ISO 8601 con desfase de `America/Mexico_City`. |
-| Servicios de dominio | `app/Services/Agenda/`, `app/Services/Difusion/`, `app/Services/WhatsApp/` | Reglas de negocio: disponibilidad, citas, huecos, difusión y envío a Meta. |
-| Eventos | `app/Events/EspacioLiberado.php` y `app/Listeners/` | Una cancelación o reprogramación registra el hueco sin acoplar la agenda a WhatsApp. |
+| Servicios de dominio | `app/Services/Agenda/` | Reglas de negocio: disponibilidad, citas y huecos. |
+| Eventos | `app/Events/EspacioLiberado.php`, `app/Listeners/RegistrarEspacioLiberado.php` | Una cancelación o reprogramación registra el hueco para las citas de última hora. |
 | Políticas y middleware | `app/Policies/CitaPolicy.php`, `app/Http/Middleware/` | La dueña ve todo; una clienta, solo lo suyo. Una cuenta desactivada deja de servir. |
 
 ## 2. Estructura del backend
 
 ```
 app/
-  Console/Commands/      AgendaDemo, WhatsAppEnviar, WhatsAppPlantillas (laboratorio), CrearAdmin (nuevo)
+  Console/Commands/      CrearAdmin (usuarios:crear-admin)
   Events/                EspacioLiberado
-  Exceptions/            HorarioNoDisponibleException (409), CitaNoModificableException (422), WhatsAppNoConfiguradoException (503)
-  Http/Controllers/Api/  WhatsAppWebhookController
+  Exceptions/            HorarioNoDisponibleException (409), CitaNoModificableException (422)
   Http/Controllers/Api/Web/  Auth, Usuario, Servicio, Horario, Bloqueo, Disponibilidad, Cita, Agenda, Cliente, MiCuenta, Hueco
   Http/Middleware/       EnsureRol, EnsureUsuarioActivo
   Http/Resources/        User, Cliente, Servicio, Cita, Bloqueo, Horario, Hueco, Fecha
-  Listeners/             BuscarClientasParaEspacioLiberado (laboratorio), RegistrarEspacioLiberado (nuevo)
-  Models/                User, Cliente, Servicio, ServicioEtapa, Cita, CitaBloque, HorarioAtencion,
-                         BloqueoAgenda, Hueco, Difusion, EventoWhatsapp
+  Listeners/             RegistrarEspacioLiberado
+  Models/                User, Cliente, Servicio, ServicioEtapa, Cita, CitaBloque, HorarioAtencion, BloqueoAgenda, Hueco
   Policies/              CitaPolicy
   Services/Agenda/       DisponibilidadService, CitaService, HuecoService, ResultadoDisponibilidad
-  Services/Difusion/     DifusionService
-  Services/WhatsApp/     WhatsAppService, PlantillaService (laboratorio)
-  Support/               Telefono (normalización a wa_id)
+  Support/               Telefono (normalización de teléfonos)
 config/agenda.php        Reglas configurables de la agenda
 config/cors.php          Orígenes del frontend web
 lang/es/validation.php   Mensajes de validación en español
@@ -68,10 +64,8 @@ docs/evidencias/         Salida real de pruebas e integración HTTP
 | Disponibilidad | Terminado | Agenda flexible por etapas (sección 6). |
 | Citas | Terminado | Crear, consultar, reprogramar, cancelar y registrar la atención (completada o no asistió). |
 | Agenda del panel | Terminado | Vista por día o semana y sondeo de cambios cada 30 s. |
-| Clientas | Terminado | CRUD, consentimiento de avisos, historial de visitas e historial de conversación. |
-| Huecos y difusión | Terminado en código, sin envío real | Lista de huecos, candidatas elegibles y difusión manual. El envío real depende de la aprobación de la plantilla `espacio_liberado` en Meta (SCRUM-12). |
-| Webhook de WhatsApp | Portado del laboratorio | Ahora enlaza cada mensaje con su clienta. |
-| Flujo conversacional por WhatsApp | No implementado | Ver pendientes. |
+| Clientas | Terminado | CRUD, consentimiento de avisos e historial de visitas. |
+| Huecos (citas de última hora) | Terminado (lado servidor) | Lista de huecos con `sigue_libre` y candidatas elegibles. El aviso a la clienta lo dará la app Android; falta acordarlo con José y Rodri. |
 | Puntos y recompensas | No implementado | No existe en Jira (ver decisiones pendientes). |
 
 ## 4. Base de datos
@@ -81,26 +75,24 @@ Motor objetivo: **PostgreSQL 16** (Jira SCRUM-15). El código no usa funciones e
 | Tabla | Para qué | Columnas clave |
 |---|---|---|
 | `users` | Cuentas de acceso | `rol` (`admin` = dueña, `cliente`), `activo` |
-| `clientes` | Clientas, tengan o no cuenta | `wa_id` (único), `nombre`, `acepta_avisos` (inicia en **falso**), `user_id` (único, nulo si solo usa WhatsApp) |
+| `clientes` | Clientas, tengan o no cuenta | `telefono` (único, 10 dígitos en México), `nombre`, `acepta_avisos` (inicia en **falso**), `user_id` (único; nulo si la registró la dueña y aún no tiene cuenta) |
 | `servicios` | Catálogo | `duracion_minutos` (suma de etapas), `precio`, `activo` |
 | `servicio_etapas` | Etapas de cada servicio | `orden`, `nombre`, `duracion_minutos`, `ocupa_estilista` |
 | `horarios_atencion` | Horario por día | `dia_semana` (0 = domingo … 6 = sábado), `abre`, `cierra`, `activo` |
 | `bloqueos_agenda` | Días u horas sin atención | `inicio`, `fin`, `motivo`, `user_id` |
-| `citas` | Reservas | `cliente_id`, `servicio_id`, `inicio`, `fin`, `estado`, `origen`, `notas`, `cancelada_en`, `reprogramada_en`, `atendida_en` |
+| `citas` | Reservas | `cliente_id`, `servicio_id`, `inicio`, `fin`, `estado`, `origen` (`web`, `panel`, `app`), `notas`, `cancelada_en`, `reprogramada_en`, `atendida_en` |
 | `cita_bloques` | Copia de las etapas con horas reales al agendar | `cita_id`, `orden`, `inicio`, `fin`, `ocupa_estilista` |
 | `espacios_liberados` | Huecos por cancelación o reprogramación | `cita_id`, `servicio_id`, `inicio`, `fin`, `motivo` |
-| `difusiones` | Cada aviso enviado | `espacio_liberado_id` + `cliente_id` (únicos juntos), `estado_envio`, `wamid`, `error` |
-| `eventos_whatsapp` | Mensajes y estados de Meta | `wamid` (único), `cliente_id`, `direccion` (`entrante`/`saliente`), `payload` |
 | `personal_access_tokens` | Tokens de Sanctum | — |
 
-Relaciones: una clienta tiene muchas citas, difusiones y eventos; un usuario tiene como máximo una clienta; un servicio tiene muchas etapas y citas; una cita tiene muchos bloques y puede originar huecos; un hueco tiene muchas difusiones.
+Relaciones: una clienta tiene muchas citas; un usuario tiene como máximo una clienta; un servicio tiene muchas etapas y citas; una cita tiene muchos bloques y puede originar huecos.
 
-**Diferencias con el documento de base de datos entregado antes** (que se escribió antes de que existiera el código): los estados de cita son `confirmada`, `cancelada`, `completada` y `no_asistio` (el documento decía `agendada`); `dia_semana` usa 0–6 como Carbon (el documento decía ISO 1–7); y la restricción de exclusión de PostgreSQL contra traslapes **ya no aplica**, porque ahora dos citas sí pueden traslaparse si sus etapas activas no chocan. La protección contra dobles reservas vive en la transacción con bloqueo (sección 6.4).
+**Diferencias con el documento de base de datos entregado antes:** ese documento incluía tablas de WhatsApp (`eventos_whatsapp`, `difusiones`, `conversaciones`) que **ya no existen**, porque el sistema no usa WhatsApp. Los estados de cita son `confirmada`, `cancelada`, `completada` y `no_asistio`; `dia_semana` usa 0–6, y la restricción de exclusión contra traslapes ya no aplica, porque dos citas pueden traslaparse si sus etapas activas no chocan.
 
 ## 5. Autenticación
 
 - **Sanctum con tokens Bearer** (`Authorization: Bearer <token>`). No hay cookies ni CSRF porque el frontend web está en otro origen.
-- `POST /api/web/auth/registro` crea una cuenta de **clienta**. Si su teléfono ya existe porque escribió por WhatsApp, se vincula a esa clienta en lugar de duplicarla.
+- `POST /api/web/auth/registro` crea una cuenta de **clienta**. Si la dueña ya la había registrado con ese teléfono, se vincula a esa clienta en lugar de duplicarla.
 - La cuenta de la **dueña** se crea con `php artisan usuarios:crear-admin correo@ejemplo.com --nombre="Joss"` (pide la contraseña) o desde `POST /api/web/admin/usuarios`.
 - `POST /api/web/auth/logout` revoca solo el token usado. Desactivar una cuenta revoca todos sus tokens.
 - Límite de intentos: login 6 por minuto y registro 10 por minuto por IP.
@@ -116,9 +108,9 @@ Ejemplo del martes, verificado en pruebas y por HTTP:
 | Cita | Bloques | Resultado |
 |---|---|---|
 | Tinte 9:00–12:00 | Aplicación 9:00–9:30 (activa) · Procesamiento 9:30–11:30 · Enjuague 11:30–12:00 (activa) | 201 |
-| Corte de hombre 9:30–10:30 | Activa todo el tiempo | 201: cae en el procesamiento |
-| Corte de hombre 10:30–11:30 | Activa todo el tiempo | 201: cae en el procesamiento |
-| Corte de hombre 11:00–12:00 | Activa todo el tiempo | **409**: choca con el enjuague |
+| Corte de hombre 9:30–10:30 | Activa | 201: cae en el procesamiento |
+| Corte de hombre 10:30–11:30 | Activa | 201: cae en el procesamiento |
+| Corte de hombre 11:00–12:00 | Activa | **409**: choca con el enjuague |
 
 ### 6.2 Validaciones de cada reserva (en este orden)
 
@@ -140,21 +132,21 @@ Ejemplo del martes, verificado en pruebas y por HTTP:
 
 ### 6.4 Concurrencia
 
-`CitaService` revalida la disponibilidad **dentro** de la transacción y bloquea con `SELECT … FOR UPDATE` la fila del horario del día. Dos reservas simultáneas del mismo día se atienden en turno, y la segunda ve la cita de la primera. Verificado en PostgreSQL con 10 procesos simultáneos: una reserva confirmada y nueve rechazadas (`docs/evidencias/pruebas_postgresql.txt`).
+`CitaService` revalida la disponibilidad **dentro** de la transacción y bloquea con `SELECT … FOR UPDATE` la fila del horario del día. Verificado en PostgreSQL con 10 procesos simultáneos sobre la misma hora: una reserva confirmada y nueve rechazadas.
 
 ### 6.5 Otras reglas
 
-- Las citas guardan una copia de sus etapas (`cita_bloques`). Si la dueña edita un servicio, las citas ya agendadas no cambian.
+- Las citas guardan una copia de sus etapas (`cita_bloques`). Editar un servicio no cambia las citas ya agendadas.
 - Cancelar es idempotente y solo aplica a citas confirmadas. Una clienta solo cancela citas que aún no empiezan; la dueña puede cancelar cualquier cita confirmada.
 - Reprogramar mueve la misma cita; el horario que deja se registra como hueco.
 - Una cita completada cuenta como **visita** en el historial.
 - Un bloqueo no cancela citas existentes: las devuelve en `citas_afectadas` para que la dueña decida.
-- La difusión de un hueco nunca es automática. Solo se envía a clientas con consentimiento, que no liberaron el hueco, sin cita traslapada y que no lo recibieron antes. Si el hueco ya se ocupó, responde 409.
-- Los teléfonos se normalizan al formato `wa_id` de WhatsApp: `3312345678` → `5213312345678` (`app/Support/Telefono.php`). Así la web y el webhook no duplican clientas.
+- **Huecos (citas de última hora):** al cancelar o reprogramar se registra el hueco. `sigue_libre` indica si el servicio original todavía cabe. Las candidatas son clientas con consentimiento, que no liberaron el hueco y sin cita traslapada.
+- **Teléfonos:** en México se guardan 10 dígitos. `33 1234 5678`, `+52 33 1234 5678` y `+52 1 33 1234 5678` quedan como `3312345678` (`app/Support/Telefono.php`). Así la misma clienta no se duplica entre la web y la app.
 
 ## 7. Endpoints
 
-Base: `/api/web`. Detalle de cuerpos, respuestas y errores en [INTEGRACION_FRONTEND_WEB_FRANC.md](INTEGRACION_FRONTEND_WEB_FRANC.md).
+Base: `/api/web`, con 35 rutas en total. Detalle de cuerpos, respuestas y errores en [INTEGRACION_FRONTEND_WEB_FRANC.md](INTEGRACION_FRONTEND_WEB_FRANC.md).
 
 | Método | Ruta | Acceso | Uso |
 |---|---|---|---|
@@ -174,16 +166,14 @@ Base: `/api/web`. Detalle de cuerpos, respuestas y errores en [INTEGRACION_FRONT
 | PUT | `/admin/horarios/{dia}` | Dueña | Horario de un día |
 | GET / POST / DELETE | `/admin/bloqueos[/{id}]` | Dueña | Bloqueos |
 | GET / POST / PATCH | `/admin/clientes[/{id}]` | Dueña | Clientas |
-| GET | `/admin/clientes/{id}/historial` y `/mensajes` | Dueña | Historial y conversación |
+| GET | `/admin/clientes/{id}/historial` | Dueña | Historial de visitas |
 | GET | `/admin/agenda`, `/admin/agenda/cambios` | Dueña | Agenda y sondeo |
 | PATCH | `/admin/citas/{id}/estado` | Dueña | Completada o no asistió |
 | GET | `/admin/huecos`, `/admin/huecos/{id}/candidatas` | Dueña | Huecos y candidatas |
-| POST | `/admin/huecos/{id}/difundir` | Dueña | Difusión por WhatsApp |
-| GET / POST | `/api/whatsapp/webhook` | Meta | Verificación y eventos |
 
 ## 8. Configuración y ejecución
 
-En Windows, con el PHP 8.4 del laboratorio (`set PATH=C:\php84;%PATH%`):
+En Windows, con PHP 8.4 (`set PATH=C:\php84;%PATH%`):
 
 ```bat
 cd backend-web
@@ -207,22 +197,20 @@ DB_USERNAME=...
 DB_PASSWORD=...
 ```
 
-Variables nuevas en `.env.example`: `APP_TIMEZONE`, `CORS_ALLOWED_ORIGINS`, `AGENDA_*`, `WHATSAPP_NUMERO_PRUEBA`, `ADMIN_EMAIL` y `ADMIN_PASSWORD`, todas vacías o con valores de desarrollo. El `WHATSAPP_VERIFY_TOKEN` del laboratorio venía con un valor real en `.env.example`; aquí quedó vacío. **Conviene generar uno nuevo**, porque el anterior ya estuvo en un archivo de ejemplo.
+Variables nuevas en `.env.example`: `APP_TIMEZONE`, `CORS_ALLOWED_ORIGINS`, `AGENDA_*`, `ADMIN_EMAIL` y `ADMIN_PASSWORD`. Se retiraron todas las variables de WhatsApp.
 
 ## 9. Pruebas realizadas
 
 | Prueba | Resultado | Evidencia |
 |---|---|---|
-| Suite completa en SQLite en memoria | **57 pruebas, 333 aserciones, todas pasan** | `docs/evidencias/pruebas_sqlite.txt` |
-| Suite completa en PostgreSQL 16.15 | **57 pruebas, todas pasan** | `docs/evidencias/pruebas_postgresql.txt` |
-| Concurrencia: 10 procesos, misma hora | 1 confirmada, 9 rechazadas | `docs/evidencias/pruebas_postgresql.txt` |
-| `migrate:rollback` completo en PostgreSQL | 0 tablas restantes y vuelve a migrar | `docs/evidencias/pruebas_postgresql.txt` |
+| Suite completa en SQLite en memoria | **52 pruebas, 300 aserciones, todas pasan** | `docs/evidencias/pruebas_sqlite.txt` |
+| Suite completa en PostgreSQL 16.15 | **52 pruebas, todas pasan** | `docs/evidencias/pruebas_postgresql.txt` |
+| Concurrencia: 10 procesos a la misma hora | 1 confirmada, 9 rechazadas | `docs/evidencias/pruebas_postgresql.txt` |
+| `migrate:fresh --seed` y `migrate:rollback` en PostgreSQL | Correctos; 0 tablas restantes tras el rollback | `docs/evidencias/pruebas_postgresql.txt` |
 | Integración HTTP real con `php artisan serve` | Login, CORS, catálogo, ejemplo del martes, 401 y datos guardados | `docs/evidencias/prueba_http_integracion.txt` |
 | Estilo con Laravel Pint | Sin observaciones | `vendor/bin/pint --test` |
 
-Cobertura de la suite: registro (incluida la vinculación con una clienta de WhatsApp), login correcto y fallido, logout con revocación, cuentas desactivadas, permisos de dueña y clienta, rutas sin token (401), CRUD de servicios con etapas, desactivación, disponibilidad (día libre, cerrado, lleno, pasado y con tinte), citas compatibles e incompatibles, dos tintes traslapados, horario, pasado, capacidad, cancelación propia y ajena, idempotencia, reprogramación, registro de visitas, bloqueos, agenda y sondeo, horarios, clientas y consentimiento, historial, conversación desde el webhook, huecos, candidatas, difusión (enviada, fallida, repetida, sin configuración y hueco ocupado) y normalización de teléfonos.
-
-Las pruebas de WhatsApp usan respuestas simuladas de Meta (`Http::fake`). **No se envió ningún mensaje real.**
+Cobertura: registro (incluida la vinculación con una clienta ya registrada por la dueña), login correcto y fallido, logout con revocación, cuentas desactivadas, permisos de dueña y clienta, rutas sin token (401), CRUD de servicios con etapas, desactivación, disponibilidad (día libre, cerrado, lleno, pasado y con tinte), citas compatibles e incompatibles, dos tintes traslapados, horario, pasado, capacidad, cancelación propia y ajena, idempotencia, reprogramación, registro de visitas, bloqueos, agenda y sondeo, horarios, clientas y consentimiento, historial, huecos (lista, `sigue_libre` y candidatas) y normalización de teléfonos.
 
 Para correrlas: `php artisan test` (con `PAO_DISABLE=1` si la salida aparece en formato JSON).
 
@@ -230,14 +218,11 @@ Para correrlas: `php artisan test` (con `PAO_DISABLE=1` si la salida aparece en 
 
 | Pendiente | Por qué |
 |---|---|
-| Flujo conversacional por WhatsApp (SCRUM-28, 32, 33, 34, 38, 41) | Fuera del alcance del backend web; depende de las plantillas aprobadas (SCRUM-12). Se puede reutilizar `CitaService`. |
-| Traducir errores de Meta 190, 131047 y 131030 a excepciones (SCRUM-17) | `WhatsAppService` del laboratorio registra el error en el log, pero no lo traduce. |
-| Sub-bloques de un hueco (SCRUM-31) y toma parcial (SCRUM-41) | No implementado. Hoy el hueco se ofrece con su servicio original. |
-| Recordatorios automáticos (SCRUM-43) | No implementado. |
-| Costo estimado de una difusión (criterio de SCRUM-35) | Falta definir la tarifa de Meta por mensaje de marketing. |
+| Aviso de citas de última hora a las clientas | El servidor ya registra huecos y candidatas. Falta acordar con José y Rodri cómo lo muestra la app: notificación push o una pantalla de "huecos disponibles". |
+| Sub-bloques de un hueco (SCRUM-31) | No implementado. Hoy el hueco se ofrece con su servicio original. |
+| Recordatorios de cita | No implementado. Sin WhatsApp, sería una notificación de la app o un correo. |
 | Pipeline de CI en GitHub Actions (SCRUM-30) | El código ya pasa Pint y las pruebas; el pipeline es tarea de Franc. |
 | Docker y staging con TLS (SCRUM-14, 44) | Infraestructura, fuera de esta entrega. |
-| Mensajes salientes que no son difusiones en el historial | Solo se guardan los avisos de huecos. Las confirmaciones futuras deberán guardarse igual. |
 
 ## 11. Decisiones pendientes (no inventé estas reglas)
 
@@ -246,9 +231,9 @@ Para correrlas: `php artisan test` (con `PAO_DISABLE=1` si la salida aparece en 
 3. **Bloqueos durante el procesamiento.** Hoy un bloqueo impide cualquier cita que lo toque, aunque sea en la etapa de espera. ¿Es correcto?
 4. **Política de cancelación.** No hay anticipación mínima. ¿Se puede cancelar a cualquier hora?
 5. **Puntos y recompensas.** Aparecen en la propuesta de la app móvil, pero no hay historia en Jira ni reglas (cuántos puntos por visita, qué recompensas). No se implementó.
-6. **Registro con correo o solo teléfono.** La web pide correo y contraseña; SCRUM-58 describe un registro móvil con nombre y teléfono. Hay que acordarlo con José para que una clienta use la misma cuenta en ambos.
-7. **Asignaciones de Jira.** No coinciden con la división oficial del equipo. Ver la matriz.
+6. **Registro con correo o solo teléfono.** La web pide correo y contraseña; SCRUM-58 describe un registro móvil con nombre y teléfono. Hay que acordarlo con José para que una clienta use la misma cuenta en ambos canales.
+7. **Jira.** Hay épicas completas de WhatsApp que ya no aplican, y las asignaciones no coinciden con la división oficial del equipo. Ver la matriz.
 
 ## 12. Glosario mínimo
 
-**wa_id:** número de WhatsApp de la clienta en formato internacional sin `+`. **wamid:** identificador único de un mensaje en Meta. **Etapa activa:** tiempo en que la estilista atiende a la clienta. **Procesamiento:** tiempo de espera en que la estilista queda libre. **Hueco:** horario liberado por una cancelación o reprogramación. **Difusión:** aviso de un hueco enviado por WhatsApp a una clienta.
+**Etapa activa:** tiempo en que la estilista atiende a la clienta. **Procesamiento:** tiempo de espera en que la estilista queda libre. **Hueco:** horario liberado por una cancelación o reprogramación. **Cita de última hora:** reserva que aprovecha un hueco.

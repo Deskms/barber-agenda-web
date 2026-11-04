@@ -11,10 +11,9 @@ Proyecto Cuatrimestral Integral · Ingeniería en Desarrollo y Gestión de Softw
 | Panel web | Laravel + Blade + Bootstrap | este |
 | Backend / API | Laravel 13 sobre PHP 8.4, monolito modular | este |
 | Base de datos | PostgreSQL | — |
-| Canal WhatsApp | WhatsApp Business Platform (Cloud API de Meta) | este (módulo) |
-| App móvil | React Native + Expo | [barber-agenda-mobile](../barber-agenda-mobile) |
+| App móvil | Android Studio (nativa) | [barber-agenda-mobile](../barber-agenda-mobile) |
 
-La regla de diseño central: **toda la lógica de disponibilidad vive en el Backend**. El panel, la app móvil y WhatsApp solo consumen la API, así que ningún canal puede confirmar una cita empalmada.
+La regla de diseño central: **toda la lógica de disponibilidad vive en el Backend**. La página web y la app Android solo consumen la API, así que ningún canal puede confirmar una cita empalmada.
 
 ## Requisitos
 
@@ -36,10 +35,6 @@ php artisan serve
 
 > La configuración de PostgreSQL y el entorno con Docker se documentarán en este README al cerrar SCRUM-14 y SCRUM-15.
 
-## Restricción de pruebas con WhatsApp
-
-El WhatsApp del negocio es su canal principal de clientas. **Todas las pruebas se hacen con el número de prueba proporcionado por Meta**; no se conecta, migra ni modifica la cuenta real. Las credenciales viven solo en `.env`.
-
 ## Forma de trabajo
 
 - Gestión: Jira, proyecto SCRUM (4 sprints de 5 días).
@@ -50,7 +45,7 @@ El WhatsApp del negocio es su canal principal de clientas. **Todas las pruebas s
 
 | Integrante | Rol |
 |---|---|
-| Adrián Dominic Hernández Esqueda | Líder de proyecto · integración Meta/WhatsApp |
+| Adrián Dominic Hernández Esqueda | Líder de proyecto · backend web |
 | José Francisco Quezada Palomo | Desarrollador fullstack · panel, CI y despliegue |
 | José Manuel Castellanos Castro | Desarrollador backend · datos y disponibilidad |
 | Rodrigo Salas Martínez | Desarrollador en formación · catálogos, pruebas y documentación |

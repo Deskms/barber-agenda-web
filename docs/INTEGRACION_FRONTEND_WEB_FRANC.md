@@ -33,7 +33,7 @@ No se usan cookies, así que **no** necesitas `withCredentials` ni el CSRF de Sa
 
 | Rol | Quién es | Qué puede hacer |
 |---|---|---|
-| `admin` | La dueña | Todo: agenda completa, servicios, horarios, bloqueos, clientas, usuarios y difusiones (`/admin/*`). Puede agendar a nombre de cualquier clienta. |
+| `admin` | La dueña | Todo: agenda completa, servicios, horarios, bloqueos, clientas, usuarios y huecos (`/admin/*`). Puede agendar a nombre de cualquier clienta. |
 | `cliente` | Clienta con cuenta | Ver servicios y disponibilidad, agendar para sí misma, ver, reprogramar y cancelar **sus** citas, y ver su historial. |
 
 Usa `usuario.rol` de la respuesta de login para decidir qué menú mostrar. El backend valida los permisos de todos modos: una clienta que llame a `/admin/*` recibe 403.
@@ -61,14 +61,14 @@ Respuesta **201**:
   "tipo": "Bearer",
   "usuario": {
     "id": 2, "nombre": "Ana López", "email": "ana@example.com", "rol": "cliente", "activo": true,
-    "cliente": { "id": 4, "nombre": "Ana López", "telefono": "5213312345678", "acepta_avisos": true, "tiene_cuenta": true, "creado_en": "2026-11-03T19:29:28-06:00" }
+    "cliente": { "id": 4, "nombre": "Ana López", "telefono": "3312345678", "acepta_avisos": true, "tiene_cuenta": true, "creado_en": "2026-11-03T19:29:28-06:00" }
   }
 }
 ```
 
-- El teléfono se acepta con espacios, guiones o `+52`, y se guarda normalizado (`5213312345678`).
-- Si la clienta ya había escrito por WhatsApp, su registro se **vincula** a esa clienta en lugar de duplicarla.
-- `acepta_avisos` es el consentimiento para recibir avisos de horarios liberados. Muéstralo como una casilla **sin marcar** por defecto.
+- El teléfono se acepta con espacios, guiones o `+52`, y se guarda con 10 dígitos (`3312345678`).
+- Si la dueña ya la había registrado en el panel con ese teléfono, su registro se **vincula** a esa clienta en lugar de duplicarla.
+- `acepta_avisos` es el consentimiento para recibir avisos de citas de última hora (horarios liberados). Muéstralo como una casilla **sin marcar** por defecto.
 
 ### Login — `POST /auth/login`
 
@@ -102,7 +102,6 @@ Guarda el token y envíalo en cada petición protegida: `Authorization: Bearer 2
 | 409 | El horario ya no está disponible | `{"message", "motivo", "alternativas": [...]}` |
 | 422 | Datos inválidos o la cita no admite el cambio | `{"message", "errors": {"campo": ["mensaje"]}}`; en reglas de negocio solo viene `message` |
 | 429 | Demasiados intentos de login o registro | — |
-| 503 | WhatsApp no está configurado en el servidor | `{"message":"WhatsApp no está configurado en este servidor."}` |
 
 Ejemplo real de 422 (registro con varios errores):
 
@@ -192,7 +191,7 @@ Respuesta **201**:
     "id": 1, "estado": "confirmada", "origen": "web",
     "inicio": "2026-11-10T10:00:00-06:00", "fin": "2026-11-10T13:00:00-06:00", "notas": "Tono castaño",
     "servicio": { "id": 6, "nombre": "Tinte", "precio": 900 },
-    "cliente": { "id": 4, "nombre": "Ana López", "telefono": "5213312345678" },
+    "cliente": { "id": 4, "nombre": "Ana López", "telefono": "3312345678" },
     "bloques": [
       { "orden": 1, "nombre": "Aplicación del tinte", "inicio": "2026-11-10T10:00:00-06:00", "fin": "2026-11-10T10:30:00-06:00", "ocupa_estilista": true },
       { "orden": 2, "nombre": "Procesamiento", "inicio": "2026-11-10T10:30:00-06:00", "fin": "2026-11-10T12:30:00-06:00", "ocupa_estilista": false },
@@ -227,7 +226,7 @@ Respuesta **409** (se intentó un corte a las 10:15, durante la aplicación del 
 | `completada` | La clienta fue atendida: cuenta como visita | Verde |
 | `no_asistio` | La clienta no llegó | Rojo |
 
-`origen` puede ser `web` (la agendó la clienta), `panel` (la dueña) o `whatsapp`.
+`origen` puede ser `web` (la agendó la clienta en la página), `panel` (la dueña) o `app` (la clienta desde Android).
 
 ### Otras operaciones de citas
 
@@ -309,28 +308,21 @@ Reglas: al menos una etapa debe ocupar a la estilista y la duración total no pu
 | `POST /admin/clientes` | `{"nombre":"Lucía","telefono":"3311112222","acepta_avisos":false}` |
 | `GET` / `PATCH /admin/clientes/{id}` | Editar nombre, teléfono o consentimiento |
 | `GET /admin/clientes/{id}/historial` | `resumen` (`visitas`, `no_asistio`, `canceladas`, `ultima_visita`) y `citas` |
-| `GET /admin/clientes/{id}/mensajes` | `mensajes` con `direccion` (`entrante` o `saliente`), `texto` y `fecha`; solo lectura |
 
 La clienta ve su propio historial en `GET /mi/historial`, con la misma forma.
 
-### Huecos y difusión
+### Huecos (citas de última hora)
 
-1. `GET /admin/huecos` → huecos futuros con `sigue_libre` (si el servicio original todavía cabe) y `difusiones_enviadas`.
-2. `GET /admin/huecos/{id}/candidatas` → clientas elegibles: con consentimiento, que no liberaron el hueco, sin cita traslapada y que aún no lo recibieron.
-3. La dueña marca a quién avisar y ve cuántos envíos se harán (el número de seleccionadas).
-4. `POST /admin/huecos/{id}/difundir` con `{"cliente_ids":[4,7]}`.
+Cuando una cita se cancela o se reprograma, su horario queda registrado como hueco.
+
+1. `GET /admin/huecos` → huecos futuros con `sigue_libre` (si el servicio original todavía cabe en ese horario).
+2. `GET /admin/huecos/{id}/candidatas` → clientas elegibles para el aviso: con consentimiento, que no liberaron el hueco y sin cita traslapada.
 
 ```json
-{ "hueco_id": 2, "enviadas": [4], "fallidas": [], "omitidas": [{ "cliente_id": 7, "razon": "No es elegible: …" }] }
+{ "data": [ { "id": 2, "inicio": "2026-11-10T14:00:00-06:00", "fin": "2026-11-10T17:00:00-06:00", "motivo": "cancelacion", "cita_id": 1, "servicio": { "id": 6, "nombre": "Tinte" }, "sigue_libre": true } ] }
 ```
 
-| Respuesta | Significado |
-|---|---|
-| 409 | El hueco ya se ocupó |
-| 422 | El hueco ya pasó |
-| 503 | WhatsApp no está configurado en ese servidor |
-
-La difusión **nunca** se dispara sola: siempre requiere esta confirmación de la dueña. El costo por mensaje que pide SCRUM-35 todavía no lo da el backend (falta la tarifa).
+En el panel muestra los huecos para que la dueña los vea y pueda agendar ahí directamente. El aviso a las clientas lo dará la **app Android**; cómo exactamente está pendiente de acordar con José y Rodri.
 
 ### Usuarios
 
@@ -354,8 +346,8 @@ La difusión **nunca** se dispara sola: siempre requiere esta confirmación de l
 | Detalle de cita (dueña) | `GET /citas/{id}`, `PATCH /citas/{id}`, `POST /citas/{id}/cancelar`, `PATCH /admin/citas/{id}/estado` |
 | Servicios | `/admin/servicios` |
 | Horarios y bloqueos | `GET /horarios`, `PUT /admin/horarios/{dia}`, `/admin/bloqueos` |
-| Clientas | `/admin/clientes`, `/historial`, `/mensajes` |
-| Difusión de huecos | `/admin/huecos`, `/candidatas`, `/difundir` |
+| Clientas | `/admin/clientes`, `/admin/clientes/{id}/historial` |
+| Huecos | `/admin/huecos`, `/admin/huecos/{id}/candidatas` |
 | Usuarios | `/admin/usuarios` |
 
 ## 8. Para empezar
