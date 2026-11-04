@@ -74,6 +74,18 @@ class DisponibilidadTest extends TestCase
         $this->assertContains('12:00', $inicios);
     }
 
+    public function test_un_dia_lleno_no_ofrece_horarios(): void
+    {
+        $admin = $this->admin();
+        $corte = $this->servicioSimple();
+
+        foreach (range(9, 18) as $hora) {
+            $this->agendarComoAdmin($admin, $corte, $this->clienta()->cliente, sprintf('2026-11-10 %02d:00', $hora))->assertCreated();
+        }
+
+        $this->getJson("/api/web/disponibilidad?servicio_id={$corte->id}&fecha=2026-11-10")->assertOk()->assertJsonCount(0, 'slots');
+    }
+
     public function test_no_ofrece_horarios_que_ya_pasaron(): void
     {
         $this->travelTo(Carbon::parse('2026-11-10 12:10:00'));
