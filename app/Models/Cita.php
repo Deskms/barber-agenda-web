@@ -5,30 +5,41 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Cita extends Model
 {
     protected $table = 'citas';
 
     public const CONFIRMADA = 'confirmada';
-    public const CANCELADA  = 'cancelada';
+
+    public const CANCELADA = 'cancelada';
+
     public const COMPLETADA = 'completada';
+
     public const NO_ASISTIO = 'no_asistio';
 
+    public const ESTADOS = [self::CONFIRMADA, self::CANCELADA, self::COMPLETADA, self::NO_ASISTIO];
+
     public const ORIGEN_WHATSAPP = 'whatsapp';
-    public const ORIGEN_PANEL    = 'panel';
+
+    public const ORIGEN_PANEL = 'panel';
+
+    public const ORIGEN_WEB = 'web';
 
     protected $fillable = [
         'cliente_id', 'servicio_id', 'inicio', 'fin',
-        'estado', 'origen', 'cancelada_en',
+        'estado', 'origen', 'notas', 'cancelada_en', 'reprogramada_en', 'atendida_en',
     ];
 
     protected function casts(): array
     {
         return [
-            'inicio'       => 'datetime',
-            'fin'          => 'datetime',
+            'inicio' => 'datetime',
+            'fin' => 'datetime',
             'cancelada_en' => 'datetime',
+            'reprogramada_en' => 'datetime',
+            'atendida_en' => 'datetime',
         ];
     }
 
@@ -40,6 +51,11 @@ class Cita extends Model
     public function servicio(): BelongsTo
     {
         return $this->belongsTo(Servicio::class);
+    }
+
+    public function bloques(): HasMany
+    {
+        return $this->hasMany(CitaBloque::class)->orderBy('orden');
     }
 
     /**
@@ -55,12 +71,11 @@ class Cita extends Model
      * Citas cuyo intervalo se traslapa con [$inicio, $fin).
      *
      * Estrictamente < y > : una cita 10:00-11:00 y otra 11:00-12:00 NO chocan.
-     * Con <= y >= el sistema perdería huecos válidos de la agenda.
      */
     public function scopeQueChocanCon(Builder $q, $inicio, $fin): Builder
     {
         return $q->where('inicio', '<', $fin)
-                 ->where('fin', '>', $inicio);
+            ->where('fin', '>', $inicio);
     }
 
     public function scopeDelDia(Builder $q, $dia): Builder
@@ -71,5 +86,10 @@ class Cita extends Model
     public function estaCancelada(): bool
     {
         return $this->estado === self::CANCELADA;
+    }
+
+    public function estaConfirmada(): bool
+    {
+        return $this->estado === self::CONFIRMADA;
     }
 }

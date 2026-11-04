@@ -2,24 +2,45 @@
 
 namespace App\Models;
 
+use Database\Factories\ClienteFactory;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Cliente extends Model
 {
+    /** @use HasFactory<ClienteFactory> */
+    use HasFactory;
+
     protected $table = 'clientes';
 
-    protected $fillable = ['wa_id', 'nombre', 'acepta_avisos'];
+    protected $fillable = ['user_id', 'wa_id', 'nombre', 'acepta_avisos'];
 
     protected function casts(): array
     {
         return ['acepta_avisos' => 'boolean'];
     }
 
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(User::class);
+    }
+
     public function citas(): HasMany
     {
         return $this->hasMany(Cita::class);
+    }
+
+    public function eventosWhatsapp(): HasMany
+    {
+        return $this->hasMany(EventoWhatsapp::class);
+    }
+
+    public function difusiones(): HasMany
+    {
+        return $this->hasMany(Difusion::class);
     }
 
     /** Clientas que dieron consentimiento para recibir avisos de espacios liberados. */
