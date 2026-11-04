@@ -22,11 +22,11 @@ class BuscarClientasParaEspacioLiberado
         $candidatas = $this->candidatas($evento);
 
         Log::channel('whatsapp')->info('Espacio liberado', [
-            'servicio'   => $evento->cita->servicio?->nombre,
-            'inicio'     => $evento->inicio()->format('Y-m-d H:i'),
-            'fin'        => $evento->fin()->format('Y-m-d H:i'),
+            'servicio' => $evento->cita->servicio?->nombre,
+            'inicio' => $evento->inicio()->format('Y-m-d H:i'),
+            'fin' => $evento->fin()->format('Y-m-d H:i'),
             'candidatas' => $candidatas->map(fn (Cliente $c) => [
-                'wa_id'  => $c->wa_id,
+                'wa_id' => $c->wa_id,
                 'nombre' => $c->nombre,
             ])->all(),
         ]);
@@ -41,7 +41,7 @@ class BuscarClientasParaEspacioLiberado
     public function candidatas(EspacioLiberado $evento): Collection
     {
         $inicio = $evento->inicio();
-        $fin    = $evento->fin();
+        $fin = $evento->fin();
 
         $ocupadas = Cita::query()
             ->vigentes()

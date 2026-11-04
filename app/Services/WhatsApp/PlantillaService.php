@@ -24,7 +24,7 @@ class PlantillaService
     {
         return $this->cliente()->get($this->endpoint(), [
             'fields' => 'name,language,category,status,quality_score,components',
-            'limit'  => $limite,
+            'limit' => $limite,
         ]);
     }
 
@@ -41,12 +41,12 @@ class PlantillaService
     public function crear(array $definicion): Response
     {
         $payload = [
-            'name'       => $definicion['name'],
-            'language'   => $definicion['language'],
-            'category'   => strtoupper($definicion['category']),
+            'name' => $definicion['name'],
+            'language' => $definicion['language'],
+            'category' => strtoupper($definicion['category']),
             'components' => [[
-                'type'    => 'BODY',
-                'text'    => $definicion['body'],
+                'type' => 'BODY',
+                'text' => $definicion['body'],
                 'example' => ['body_text' => [array_values($definicion['ejemplos'])]],
             ]],
         ];
@@ -55,8 +55,8 @@ class PlantillaService
 
         $contexto = [
             'plantilla' => $definicion['name'],
-            'status'    => $respuesta->status(),
-            'cuerpo'    => $respuesta->json(),
+            'status' => $respuesta->status(),
+            'cuerpo' => $respuesta->json(),
         ];
 
         $respuesta->successful()
@@ -69,7 +69,7 @@ class PlantillaService
     public function eliminar(string $nombre): Response
     {
         // Meta espera el nombre como query string, no como cuerpo JSON.
-        return $this->cliente()->delete($this->endpoint() . '?name=' . urlencode($nombre));
+        return $this->cliente()->delete($this->endpoint().'?name='.urlencode($nombre));
     }
 
     private function endpoint(): string

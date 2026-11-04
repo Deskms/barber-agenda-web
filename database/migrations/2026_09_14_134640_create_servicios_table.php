@@ -11,14 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-    Schema::create('servicios', function (Blueprint $table) {
-        $table->id();
-        $table->string('nombre');
-        $table->unsignedSmallInteger('duracion_minutos');
-        $table->decimal('precio', 8, 2)->nullable();
-        $table->boolean('activo')->default(true);
-        $table->timestamps();
-    });
+        Schema::create('servicios', function (Blueprint $table) {
+            $table->id();
+            $table->string('nombre');
+            $table->unsignedSmallInteger('duracion_minutos');
+            $table->decimal('precio', 8, 2)->nullable();
+            $table->boolean('activo')->default(true);
+            $table->timestamps();
+        });
     }
 
     /**

@@ -11,20 +11,20 @@ return new class extends Migration
      */
     public function up(): void
     {
-    Schema::create('citas', function (Blueprint $table) {
-        $table->id();
-        $table->foreignId('cliente_id')->constrained('clientes');
-        $table->foreignId('servicio_id')->constrained('servicios');
-        $table->dateTime('inicio');
-        $table->dateTime('fin');
-        $table->string('estado')->default('confirmada');
-        $table->string('origen')->default('whatsapp');
-        $table->dateTime('cancelada_en')->nullable();
-        $table->timestamps();
+        Schema::create('citas', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('cliente_id')->constrained('clientes');
+            $table->foreignId('servicio_id')->constrained('servicios');
+            $table->dateTime('inicio');
+            $table->dateTime('fin');
+            $table->string('estado')->default('confirmada');
+            $table->string('origen')->default('whatsapp');
+            $table->dateTime('cancelada_en')->nullable();
+            $table->timestamps();
 
-        $table->index(['inicio', 'fin']);
-        $table->index('estado');
-    });
+            $table->index(['inicio', 'fin']);
+            $table->index('estado');
+        });
     }
 
     /**

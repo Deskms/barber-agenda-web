@@ -91,7 +91,7 @@ class WhatsAppPlantillas extends Command
         $faltantes = array_diff(array_keys(config('whatsapp.plantillas')), array_keys($existentes));
 
         if ($faltantes !== []) {
-            $this->comment('  Faltan del catálogo: ' . implode(', ', $faltantes));
+            $this->comment('  Faltan del catálogo: '.implode(', ', $faltantes));
         }
 
         $this->line('');
@@ -133,7 +133,7 @@ class WhatsAppPlantillas extends Command
             }
 
             $errores++;
-            $this->error("  ✗ {$clave}: " . data_get($respuesta->json(), 'error.message', 'sin detalle'));
+            $this->error("  ✗ {$clave}: ".data_get($respuesta->json(), 'error.message', 'sin detalle'));
             $this->pista((int) data_get($respuesta->json(), 'error.code'));
         }
 
@@ -170,10 +170,10 @@ class WhatsAppPlantillas extends Command
     {
         return match ($status) {
             'APPROVED' => 'APROBADA',
-            'PENDING'  => 'en revisión',
+            'PENDING' => 'en revisión',
             'REJECTED' => 'RECHAZADA',
-            'PAUSED'   => 'pausada',
-            default    => $status,
+            'PAUSED' => 'pausada',
+            default => $status,
         };
     }
 
@@ -181,7 +181,7 @@ class WhatsAppPlantillas extends Command
     {
         $this->line('');
         $this->error("Meta contestó HTTP {$status}");
-        $this->line('  ' . data_get($cuerpo, 'error.message', 'sin detalle'));
+        $this->line('  '.data_get($cuerpo, 'error.message', 'sin detalle'));
         $this->pista((int) data_get($cuerpo, 'error.code'));
         $this->line('');
     }
@@ -189,9 +189,9 @@ class WhatsAppPlantillas extends Command
     private function pista(int $codigo): void
     {
         match ($codigo) {
-            190     => $this->comment('  Código 190: el access token caducó. Genera uno nuevo en el Paso 1 de Meta.'),
-            100     => $this->comment('  Código 100: revisa el WABA_ID, o el token no tiene whatsapp_business_management.'),
-            200     => $this->comment('  Código 200: al token le falta el permiso whatsapp_business_management.'),
+            190 => $this->comment('  Código 190: el access token caducó. Genera uno nuevo en el Paso 1 de Meta.'),
+            100 => $this->comment('  Código 100: revisa el WABA_ID, o el token no tiene whatsapp_business_management.'),
+            200 => $this->comment('  Código 200: al token le falta el permiso whatsapp_business_management.'),
             2388023 => $this->comment('  Ya existe una plantilla con ese nombre e idioma. Usa --forzar o bórrala antes.'),
             default => null,
         };

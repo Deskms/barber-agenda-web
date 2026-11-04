@@ -136,8 +136,8 @@ return [
         ],
         'whatsapp' => [
             'driver' => 'single',
-            'path'   => storage_path('logs/whatsapp.log'),
-            'level'  => 'debug',
+            'path' => storage_path('logs/whatsapp.log'),
+            'level' => 'debug',
         ],
 
     ],

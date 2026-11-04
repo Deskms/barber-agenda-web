@@ -24,8 +24,8 @@ class WhatsAppEnviar extends Command
 
     public function handle(WhatsAppService $whatsapp): int
     {
-        $waId      = $this->argument('wa_id');
-        $texto     = $this->argument('texto');
+        $waId = $this->argument('wa_id');
+        $texto = $this->argument('texto');
         $plantilla = $this->option('plantilla');
 
         if (! $texto && ! $plantilla) {
@@ -41,23 +41,23 @@ class WhatsAppEnviar extends Command
         $this->line('');
 
         if ($respuesta->successful()) {
-            $this->info('Enviado. wamid: ' . data_get($respuesta->json(), 'messages.0.id'));
+            $this->info('Enviado. wamid: '.data_get($respuesta->json(), 'messages.0.id'));
             $this->line('');
 
             return self::SUCCESS;
         }
 
-        $this->error('Meta rechazó el envío (HTTP ' . $respuesta->status() . ')');
-        $this->line('  ' . data_get($respuesta->json(), 'error.message', 'sin detalle'));
+        $this->error('Meta rechazó el envío (HTTP '.$respuesta->status().')');
+        $this->line('  '.data_get($respuesta->json(), 'error.message', 'sin detalle'));
 
         $codigo = data_get($respuesta->json(), 'error.code');
 
         $this->line('');
 
         match ((int) $codigo) {
-            190     => $this->comment('  Código 190: el access token caducó. Genera uno nuevo en el Paso 1 de Meta.'),
-            131047  => $this->comment('  Código 131047: la ventana de 24 h está cerrada. Escribe primero desde el celular al número de prueba, o usa una plantilla.'),
-            131030  => $this->comment('  Código 131030: ese número no está en la lista de destinatarios autorizados.'),
+            190 => $this->comment('  Código 190: el access token caducó. Genera uno nuevo en el Paso 1 de Meta.'),
+            131047 => $this->comment('  Código 131047: la ventana de 24 h está cerrada. Escribe primero desde el celular al número de prueba, o usa una plantilla.'),
+            131030 => $this->comment('  Código 131030: ese número no está en la lista de destinatarios autorizados.'),
             default => null,
         };
 

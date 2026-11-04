@@ -23,9 +23,9 @@ class WhatsAppService
     {
         return $this->enviar([
             'messaging_product' => 'whatsapp',
-            'to'                => $waId,
-            'type'              => 'text',
-            'text'              => ['preview_url' => false, 'body' => $texto],
+            'to' => $waId,
+            'type' => 'text',
+            'text' => ['preview_url' => false, 'body' => $texto],
         ]);
     }
 
@@ -39,13 +39,13 @@ class WhatsAppService
         array $parametros = [],
     ): Response {
         $template = [
-            'name'     => $plantilla,
+            'name' => $plantilla,
             'language' => ['code' => $idioma],
         ];
 
         if ($parametros !== []) {
             $template['components'] = [[
-                'type'       => 'body',
+                'type' => 'body',
                 'parameters' => array_map(
                     fn ($valor) => ['type' => 'text', 'text' => (string) $valor],
                     $parametros,
@@ -55,9 +55,9 @@ class WhatsAppService
 
         return $this->enviar([
             'messaging_product' => 'whatsapp',
-            'to'                => $waId,
-            'type'              => 'template',
-            'template'          => $template,
+            'to' => $waId,
+            'type' => 'template',
+            'template' => $template,
         ]);
     }
 
@@ -80,8 +80,8 @@ class WhatsAppService
             ->post($this->endpoint(), $payload);
 
         $contexto = [
-            'to'     => $payload['to'],
-            'tipo'   => $payload['type'],
+            'to' => $payload['to'],
+            'tipo' => $payload['type'],
             'status' => $respuesta->status(),
             'cuerpo' => $respuesta->json(),
         ];

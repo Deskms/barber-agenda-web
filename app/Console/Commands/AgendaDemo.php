@@ -30,8 +30,8 @@ class AgendaDemo extends Command
         Cita::where('origen', Cita::ORIGEN_PANEL)->delete();
 
         $servicio = Servicio::activos()->where('nombre', 'Maquillaje')->first();
-        $ana      = Cliente::where('nombre', 'Ana')->first();
-        $rocio    = Cliente::where('nombre', 'Rocío')->first();
+        $ana = Cliente::where('nombre', 'Ana')->first();
+        $rocio = Cliente::where('nombre', 'Rocío')->first();
 
         if (! $servicio || ! $ana || ! $rocio) {
             $this->error('Faltan datos de ejemplo. Corre primero: php artisan db:seed --class=CatalogoSeeder');
@@ -63,7 +63,7 @@ class AgendaDemo extends Command
         $cita = $citas->agendar($ana, $servicio, $elegido['inicio']->copy(), Cita::ORIGEN_PANEL);
 
         $this->line("   Cita #{$cita->id} confirmada: "
-            . $cita->inicio->format('D d M H:i') . ' → ' . $cita->fin->format('H:i'));
+            .$cita->inicio->format('D d M H:i').' → '.$cita->fin->format('H:i'));
 
         // 3. Ese horario ya no se ofrece ------------------------------------
         $this->titulo('3. El mismo horario ya no aparece como libre');
@@ -85,11 +85,11 @@ class AgendaDemo extends Command
 
         $citas->cancelar($cita);
 
-        $evento     = new EspacioLiberado($cita->fresh(['servicio', 'cliente']));
+        $evento = new EspacioLiberado($cita->fresh(['servicio', 'cliente']));
         $candidatas = app(BuscarClientasParaEspacioLiberado::class)->candidatas($evento);
 
         $this->line('   Espacio liberado: '
-            . $evento->inicio()->format('D d M H:i') . ' → ' . $evento->fin()->format('H:i'));
+            .$evento->inicio()->format('D d M H:i').' → '.$evento->fin()->format('H:i'));
         $this->line('   Clientas a las que tendría sentido avisar:');
 
         if ($candidatas->isEmpty()) {
