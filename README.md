@@ -54,3 +54,22 @@ El WhatsApp del negocio es su canal principal de clientas. **Todas las pruebas s
 | José Francisco Quezada Palomo | Desarrollador fullstack · panel, CI y despliegue |
 | José Manuel Castellanos Castro | Desarrollador backend · datos y disponibilidad |
 | Rodrigo Salas Martínez | Desarrollador en formación · catálogos, pruebas y documentación |
+
+## Backend web (API para el frontend)
+
+La API del backend web vive bajo `/api/web` y usa tokens Bearer de Sanctum.
+
+| Documento | Contenido |
+|---|---|
+| [docs/BACKEND_WEB_DOMINIC.md](docs/BACKEND_WEB_DOMINIC.md) | Arquitectura, base de datos, reglas de la agenda por etapas, endpoints, ejecución, pruebas y pendientes |
+| [docs/INTEGRACION_FRONTEND_WEB_FRANC.md](docs/INTEGRACION_FRONTEND_WEB_FRANC.md) | Contrato de la API con ejemplos reales para el frontend web |
+| [docs/MATRIZ_JIRA_IMPLEMENTACION.md](docs/MATRIZ_JIRA_IMPLEMENTACION.md) | Estado real de cada historia de Jira |
+| [docs/evidencias/](docs/evidencias/) | Salida de las pruebas en SQLite y PostgreSQL, concurrencia e integración HTTP |
+
+Primeros pasos después de `composer install`:
+
+```bash
+php artisan migrate --seed
+php artisan usuarios:crear-admin duena@ejemplo.com --nombre="Joss"
+php artisan test
+```
