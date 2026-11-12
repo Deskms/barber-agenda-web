@@ -3,11 +3,15 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Laravel\Sanctum\HasApiTokens;
 
-class Cliente extends Model
+class Cliente extends Authenticatable
 {
+    // La app movil se autentica como la clienta, no como la duena.
+    use HasApiTokens;
+
     protected $table = 'clientes';
 
     protected $fillable = ['wa_id', 'nombre', 'acepta_avisos', 'notas', 'ultimo_mensaje_en'];

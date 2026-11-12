@@ -48,6 +48,17 @@ return [
     */
     'plantillas' => [
 
+        // Categoria AUTHENTICATION en Meta: es la unica que deja mandar
+        // codigos de un solo uso. Sin ella aprobada, la app movil no puede
+        // iniciar sesion de una clienta cuya ventana de 24 h este cerrada.
+        'codigo_acceso' => [
+            'name'     => 'codigo_acceso',
+            'language' => 'es_MX',
+            'category' => 'AUTHENTICATION',
+            'body'     => 'Tu codigo para entrar a la app es {{1}}. Vence en 10 minutos y no debes compartirlo.',
+            'ejemplos' => ['482913'],
+        ],
+
         'confirmacion_cita' => [
             'name'     => 'confirmacion_cita',
             'language' => 'es_MX',

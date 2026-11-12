@@ -1,0 +1,366 @@
+openapi: 3.0.3
+info:
+  title: Barber Agenda — API móvil
+  version: 1.0.0
+  description: >
+    API que consume la aplicación Android. Escribe en la misma base y por los
+    mismos servicios de dominio que el panel web: agendar y cancelar pasan por
+    CitaService, con su transacción y su bloqueo. Contrato explicado en
+    docs/API_MOVIL.md.
+servers:
+  - url: https://citas.tunegociomx.app/api/movil
+    description: Entorno de pruebas (túnel de Cloudflare; disponible solo con la laptop encendida)
+
+tags:
+  - name: Autenticación
+  - name: Catálogo
+  - name: Citas
+  - name: Perfil
+
+paths:
+  /auth/codigo:
+    post:
+      tags: [Autenticación]
+      summary: Enviar un código de acceso por WhatsApp
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [telefono]
+              properties:
+                telefono:
+                  type: string
+                  example: "3331111111"
+                  description: 10 dígitos o formato internacional sin +. Se normaliza a 521XXXXXXXXXX.
+      responses:
+        '202':
+          description: Código generado y enviado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  mensaje: { type: string }
+                  vigencia_minutos: { type: integer, example: 10 }
+                  codigo_de_prueba:
+                    type: string
+                    nullable: true
+                    description: Solo fuera de producción. En producción es null.
+                    example: "482913"
+        '422': { $ref: '#/components/responses/Validacion' }
+        '429': { $ref: '#/components/responses/Limite' }
+
+  /auth/token:
+    post:
+      tags: [Autenticación]
+      summary: Canjear el código por un token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [telefono, codigo]
+              properties:
+                telefono: { type: string, example: "3331111111" }
+                codigo: { type: string, pattern: '^[0-9]{6}$', example: "482913" }
+                dispositivo: { type: string, maxLength: 60, example: "Pixel 7 de Ana" }
+      responses:
+        '200':
+          description: Token emitido
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token: { type: string, example: "7|Xv2kQ9fL0pR" }
+                  expira_en: { type: string, format: date-time, nullable: true }
+                  cliente: { $ref: '#/components/schemas/Cliente' }
+        '422':
+          description: Código inválido o vencido
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /auth/salir:
+    post:
+      tags: [Autenticación]
+      summary: Revocar el token en uso
+      responses:
+        '200':
+          description: Sesión cerrada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+
+  /catalogo:
+    get:
+      tags: [Catálogo]
+      summary: Secciones activas con sus servicios
+      responses:
+        '200':
+          description: Catálogo agrupado por sección
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Seccion' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+
+  /disponibilidad:
+    get:
+      tags: [Catálogo]
+      summary: Horarios libres de un servicio en una fecha
+      parameters:
+        - name: servicio_id
+          in: query
+          required: true
+          schema: { type: integer }
+        - name: fecha
+          in: query
+          required: true
+          schema: { type: string, format: date, example: "2026-11-14" }
+      responses:
+        '200':
+          description: Inicios disponibles. Un día cerrado devuelve una lista vacía.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  fecha: { type: string, format: date }
+                  servicio_id: { type: integer }
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        inicio: { type: string, format: date-time }
+                        fin: { type: string, format: date-time }
+                        hora: { type: string, example: "10:00" }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '404': { description: El servicio no existe o está inactivo }
+        '422': { $ref: '#/components/responses/Validacion' }
+
+  /citas:
+    get:
+      tags: [Citas]
+      summary: Citas de la clienta autenticada
+      parameters:
+        - name: estado
+          in: query
+          schema:
+            type: string
+            enum: [confirmada, cancelada, completada, no_asistio]
+        - name: desde
+          in: query
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: Hasta 100 citas, de la más nueva a la más vieja
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: { $ref: '#/components/schemas/Cita' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+    post:
+      tags: [Citas]
+      summary: Agendar una cita
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [servicio_id, inicio]
+              properties:
+                servicio_id: { type: integer, example: 1 }
+                inicio:
+                  type: string
+                  pattern: '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$'
+                  example: "2026-11-14T10:00"
+                  description: Hora local, sin zona ni segundos.
+      responses:
+        '201':
+          description: Cita creada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Cita' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '409': { $ref: '#/components/responses/Conflicto' }
+        '422': { $ref: '#/components/responses/Validacion' }
+
+  /citas/{id}/cancelar:
+    post:
+      tags: [Citas]
+      summary: Cancelar una cita propia
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Cita cancelada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Cita' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '404':
+          description: >
+            La cita no existe o no es de quien pregunta. Se responde 404 y no
+            403 para no confirmar que ese identificador existe.
+        '409': { $ref: '#/components/responses/Conflicto' }
+
+  /perfil:
+    get:
+      tags: [Perfil]
+      summary: Datos de la clienta autenticada
+      responses:
+        '200':
+          description: Perfil
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Cliente' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+    put:
+      tags: [Perfil]
+      summary: Actualizar nombre o consentimiento de avisos
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nombre: { type: string, maxLength: 80 }
+                acepta_avisos:
+                  type: boolean
+                  description: Consentimiento para recibir avisos de espacios liberados.
+      responses:
+        '200':
+          description: Perfil actualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Cliente' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+        '422': { $ref: '#/components/responses/Validacion' }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: Token de Laravel Sanctum obtenido en /auth/token.
+
+  schemas:
+    Cliente:
+      type: object
+      properties:
+        id: { type: integer, example: 2 }
+        telefono: { type: string, example: "5213331111111" }
+        nombre: { type: string, nullable: true, example: "Ana" }
+        acepta_avisos: { type: boolean }
+
+    Servicio:
+      type: object
+      properties:
+        id: { type: integer }
+        nombre: { type: string, example: "Corte de cabello" }
+        duracion_minutos: { type: integer, example: 60 }
+        precio: { type: number, format: float, nullable: true, example: 180.0 }
+        seccion_id: { type: integer, nullable: true }
+
+    Seccion:
+      type: object
+      description: Parte del local con agenda propia. Lo que ocupa una no ocupa a las otras.
+      properties:
+        id: { type: integer }
+        nombre: { type: string, example: "Cortes de hombre" }
+        servicios:
+          type: array
+          items: { $ref: '#/components/schemas/Servicio' }
+
+    Cita:
+      type: object
+      properties:
+        id: { type: integer }
+        estado:
+          type: string
+          enum: [confirmada, cancelada, completada, no_asistio]
+        origen:
+          type: string
+          enum: [whatsapp, panel, movil]
+        inicio: { type: string, format: date-time }
+        fin: { type: string, format: date-time }
+        puede_cancelarse: { type: boolean }
+        servicio: { $ref: '#/components/schemas/Servicio' }
+        seccion: { $ref: '#/components/schemas/Seccion' }
+
+    Error:
+      type: object
+      properties:
+        mensaje: { type: string }
+
+  responses:
+    NoAutenticado:
+      description: Falta el token o ya no sirve
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message: { type: string, example: "Unauthenticated." }
+    Conflicto:
+      description: El horario ya no está disponible. Vuelve a pedir la disponibilidad.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    Validacion:
+      description: Datos inválidos
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message: { type: string }
+              errors:
+                type: object
+                additionalProperties:
+                  type: array
+                  items: { type: string }
+    Limite:
+      description: Demasiadas peticiones. Trae el encabezado Retry-After.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              message: { type: string, example: "Too Many Attempts." }
+
+security:
+  - bearerAuth: []

@@ -18,6 +18,7 @@ class Cita extends Model
 
     public const ORIGEN_WHATSAPP = 'whatsapp';
     public const ORIGEN_PANEL    = 'panel';
+    public const ORIGEN_MOVIL    = 'movil';
 
     protected $fillable = [
         'cliente_id', 'servicio_id', 'seccion_id', 'inicio', 'fin',
