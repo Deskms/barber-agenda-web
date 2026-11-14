@@ -1,5 +1,8 @@
 <?php
 
+use App\Http\Controllers\Api\Movil\AuthController as MovilAuthController;
+use App\Http\Controllers\Api\Movil\CitaController as MovilCitaController;
+use App\Http\Controllers\Api\Movil\ServicioController as MovilServicioController;
 use App\Http\Controllers\Api\Web\AgendaController;
 use App\Http\Controllers\Api\Web\AuthController;
 use App\Http\Controllers\Api\Web\BloqueoController;
@@ -17,11 +20,6 @@ use Illuminate\Support\Facades\Route;
 |--------------------------------------------------------------------------
 | API del backend WEB (Dominic) — la consume el frontend web (Franc)
 |--------------------------------------------------------------------------
-|
-| Prefijo /api/web. Autenticación con token Bearer de Sanctum.
-| Los endpoints de la app Android (/api/clientas/*, /api/citas, …) son del
-| backend móvil (José) y no viven aquí. Ver docs/INTEGRACION_FRONTEND_WEB_FRANC.md.
-|
 */
 Route::prefix('web')->group(function () {
     // Públicos
@@ -75,5 +73,36 @@ Route::prefix('web')->group(function () {
             Route::get('huecos', [HuecoController::class, 'index']);
             Route::get('huecos/{hueco}/candidatas', [HuecoController::class, 'candidatas']);
         });
+    });
+});
+
+/*
+|--------------------------------------------------------------------------
+| API del backend MÓVIL (José Manuel Castellanos) — App Android (Rodrigo)
+|--------------------------------------------------------------------------
+| Prefijo /api/movil (SCRUM-55 a SCRUM-57)
+*/
+Route::prefix('movil')->group(function () {
+    // Públicos: Registro, Login, Catálogo de servicios y Horarios/Disponibilidad
+    Route::post('auth/registro', [MovilAuthController::class, 'registro'])->middleware('throttle:10,1');
+    Route::post('auth/login', [MovilAuthController::class, 'login'])->middleware('throttle:6,1');
+    Route::get('servicios', [MovilServicioController::class, 'index']);
+    Route::get('servicios/{servicio}', [MovilServicioController::class, 'show']);
+    Route::get('horarios', [HorarioController::class, 'index']);
+    Route::get('disponibilidad', DisponibilidadController::class);
+    Route::get('slots', [MovilCitaController::class, 'horarios']);
+
+    // Protegidos: Clienta autenticada con token Bearer de Sanctum
+    Route::middleware(['auth:sanctum', 'activo', 'rol:cliente'])->group(function () {
+        Route::post('auth/logout', [MovilAuthController::class, 'logout']);
+        Route::get('auth/me', [MovilAuthController::class, 'me']);
+
+        Route::get('citas', [MovilCitaController::class, 'index']);
+        Route::post('citas', [MovilCitaController::class, 'store']);
+        Route::get('citas/{cita}', [MovilCitaController::class, 'show']);
+        Route::patch('citas/{cita}', [MovilCitaController::class, 'update']);
+        Route::post('citas/{cita}/cancelar', [MovilCitaController::class, 'cancelar']);
+
+        Route::get('mi/historial', [MiCuentaController::class, 'historial']);
     });
 });
