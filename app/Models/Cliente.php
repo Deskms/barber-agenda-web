@@ -18,12 +18,18 @@ class Cliente extends Authenticatable
 
     protected function casts(): array
     {
-        return ['acepta_avisos' => 'boolean', 'ultimo_mensaje_en' => 'datetime'];
+        return ['acepta_avisos' => 'boolean', 'ultimo_mensaje_en' => 'datetime', 'metas_avisadas' => 'integer'];
     }
 
     public function citas(): HasMany
     {
         return $this->hasMany(Cita::class);
+    }
+
+    /** Premios de la tarjeta de sellos ya entregados. */
+    public function canjes(): HasMany
+    {
+        return $this->hasMany(CanjeSello::class);
     }
 
     /** Clientas que dieron consentimiento para recibir avisos de espacios liberados. */

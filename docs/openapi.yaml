@@ -270,6 +270,22 @@ paths:
         '401': { $ref: '#/components/responses/NoAutenticado' }
         '422': { $ref: '#/components/responses/Validacion' }
 
+  /sellos:
+    get:
+      tags: [Sellos]
+      summary: Tarjeta de sellos de la clienta autenticada
+      description: Un sello por cada cita completada. Los sellos no se suman a mano.
+      responses:
+        '200':
+          description: Estado de la tarjeta
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { $ref: '#/components/schemas/Sellos' }
+        '401': { $ref: '#/components/responses/NoAutenticado' }
+
 components:
   securitySchemes:
     bearerAuth:
@@ -278,6 +294,17 @@ components:
       description: Token de Laravel Sanctum obtenido en /auth/token.
 
   schemas:
+    Sellos:
+      type: object
+      properties:
+        meta: { type: integer, example: 10 }
+        premio: { type: string, example: "Un corte gratis" }
+        sellos: { type: integer, example: 3, description: Sellos en la tarjeta actual (0 a meta - 1). }
+        faltan: { type: integer, example: 7 }
+        premios_disponibles: { type: integer, example: 0 }
+        total_ganados: { type: integer, example: 3 }
+        tarjeta_url: { type: string, format: uri, description: Tarjeta pública; identificador aleatorio. }
+
     Cliente:
       type: object
       properties:

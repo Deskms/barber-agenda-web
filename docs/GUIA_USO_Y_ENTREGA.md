@@ -9,7 +9,7 @@ Estado al 12 de noviembre de 2026. Rama `feature/agenda-whatsapp-mvp`.
 - 47 pruebas automáticas en verde (11 son de la API móvil).
 - Base de datos real (MariaDB) con las tablas de acceso móvil y tres clientas de prueba.
 
-No existe todavía: sellos o puntos de lealtad, pagos, ni conexión con el número real de WhatsApp de la barbería.
+Tarjeta de sellos: un sello por cita completada, premio configurable en Promociones y tarjeta pública por QR. No existe todavía: pagos ni conexión con el número real de WhatsApp de la barbería.
 
 ## 2. Reglas que no se rompen
 
@@ -99,7 +99,7 @@ Ambos están en la rama `feature/agenda-whatsapp-mvp` de `github.com/deskms/barb
 >
 > Teléfonos de prueba: 5550000001, 5550000002 y 5550000003. El código llega en la respuesta (`codigo_de_prueba`) mientras yo tenga el modo de pruebas activo. No uses números reales.
 >
-> Reglas: no inventes endpoints que no estén en el documento. Si tu asistente propone algo que no aparece ahí, pregúntame. No hay sellos ni puntos todavía. Guarda el token en almacenamiento seguro del teléfono y no lo subas a GitHub. Tu tarea en Jira es SCRUM-58 (pantallas de acceso por código).
+> Reglas: no inventes endpoints que no estén en el documento. Si tu asistente propone algo que no aparece ahí, pregúntame. Guarda el token en almacenamiento seguro del teléfono y no lo subas a GitHub. Tu tarea en Jira es SCRUM-58 (pantallas de acceso por código).
 
 ### Mañana, para darle su propio `.md`
 

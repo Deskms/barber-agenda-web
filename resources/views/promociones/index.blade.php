@@ -35,6 +35,48 @@
             <button class="btn btn-acento">Guardar</button>
         </form>
 
+        <form method="post" action="{{ route('promociones.sellos') }}" class="tarjeta p-3 mb-3">
+            @csrf
+            @method('put')
+            <h2 class="h6">Tarjeta de sellos</h2>
+            <p class="small text-secondary">Un sello por cada cita marcada como completada. Al llenar la tarjeta se le avisa a la clienta por WhatsApp, una sola vez, si acepta avisos.</p>
+            <div class="row g-2 mb-3">
+                <div class="col-4">
+                    <label class="form-label small" for="sellos_meta">Sellos para el premio</label>
+                    <input class="form-control" type="number" min="2" max="50" name="sellos_meta" id="sellos_meta" value="{{ $ajustes['sellos_meta'] }}">
+                </div>
+                <div class="col-8">
+                    <label class="form-label small" for="sellos_premio">Premio</label>
+                    <input class="form-control" name="sellos_premio" id="sellos_premio" maxlength="115" value="{{ $ajustes['sellos_premio'] }}">
+                </div>
+            </div>
+            <button class="btn btn-outline-secondary btn-sm">Guardar tarjeta</button>
+        </form>
+
+        <form method="post" action="{{ route('promociones.faltas') }}" class="tarjeta p-3 mb-3">
+            @csrf
+            @method('put')
+            <h2 class="h6">Inasistencias</h2>
+            <p class="small text-secondary">Si una clienta acumula estas faltas en 90 días, ya no puede agendar sola por WhatsApp ni por la app; tú sí puedes agendarle desde aquí. 0 = sin límite.</p>
+            <div class="d-flex gap-2 align-items-end">
+                <div>
+                    <label class="form-label small" for="faltas_bloqueo">Faltas permitidas</label>
+                    <input class="form-control" type="number" min="0" max="20" name="faltas_bloqueo" id="faltas_bloqueo" value="{{ $ajustes['faltas_bloqueo'] }}">
+                </div>
+                <button class="btn btn-outline-secondary btn-sm">Guardar</button>
+            </div>
+        </form>
+
+        <div class="tarjeta p-3 mb-3">
+            <h2 class="h6">QR de llegada (mostrador)</h2>
+            <p class="small text-secondary">Imprímelo y pégalo en el mostrador. La clienta lo escanea con la app al llegar y en la agenda aparece "Llegó" con la hora.</p>
+            <div id="qr-llegada" class="mb-2"></div>
+            <form method="post" action="{{ route('promociones.mostrador') }}" onsubmit="return confirm('El QR impreso dejará de servir. ¿Cambiarlo?')">
+                @csrf
+                <button class="btn btn-outline-secondary btn-sm">Cambiar código</button>
+            </form>
+        </div>
+
         <div class="tarjeta p-3">
             <h2 class="h6">Página de espacios libres (gratis)</h2>
             <p class="small text-secondary">Compártela en tu estado de WhatsApp, Instagram o Facebook. Cada horario abre WhatsApp con el mensaje ya escrito; como el cliente escribe primero, lo que le contestes no se cobra.</p>
@@ -89,3 +131,12 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+    if (window.QRCode) {
+        new QRCode(document.getElementById('qr-llegada'), { text: @json($linkLlegada), width: 160, height: 160 });
+    }
+</script>
+@endpush

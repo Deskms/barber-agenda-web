@@ -15,6 +15,7 @@ class CitaResource extends JsonResource
             'origen'      => $this->origen,
             'inicio'      => $this->inicio->toIso8601String(),
             'fin'         => $this->fin->toIso8601String(),
+            'llegada_en'  => $this->llegada_en?->toIso8601String(),
             'puede_cancelarse' => $this->estado === 'confirmada' && $this->inicio->isFuture(),
             'servicio'    => new ServicioResource($this->whenLoaded('servicio')),
             'seccion'     => new SeccionResource($this->whenLoaded('seccion')),

@@ -13,7 +13,7 @@
 
 <div class="tarjeta">
     <div class="table-responsive">
-        <table class="table table-hover align-middle mb-0">
+        <table class="table table-hover align-middle mb-0 tabla-tarjetas">
             <thead><tr><th>Nombre</th><th>WhatsApp</th><th class="text-center">Citas</th><th>Avisos de espacios</th><th></th></tr></thead>
             <tbody>
             @forelse ($clientes as $c)

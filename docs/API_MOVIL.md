@@ -296,11 +296,95 @@ curl -s "$BASE/disponibilidad?servicio_id=1&fecha=2026-11-14" -H "Authorization:
 
 ---
 
-## 8. Pendiente
+## 8. Tarjeta de sellos
 
-**Puntos y recompensas (tarjeta de sellos) todavía no existe.** No hay tabla ni
-endpoints. Está documentada como innovación INN-03 y en Jira como SCRUM-68 a 70.
-Cuando se construya, se agregará `GET /api/movil/sellos` a este contrato. No
-programes contra ella todavía.
+`GET /api/movil/sellos` — con token.
+
+Un sello por cada cita **completada** (la dueña la marca en el panel). Los
+sellos no se guardan ni se suman a mano: se cuentan de las citas, así que
+revertir una cita completada quita su sello. Al entregar un premio en el panel
+se descuentan los sellos de una meta.
+
+**200 OK**
+
+```json
+{
+  "data": {
+    "meta": 10,
+    "premio": "Un corte gratis",
+    "sellos": 3,
+    "faltan": 7,
+    "premios_disponibles": 0,
+    "total_ganados": 3,
+    "tarjeta_url": "https://citas.tunegociomx.app/tarjeta/9f2c...40 caracteres"
+  }
+}
+```
+
+- `sellos` son los de la tarjeta actual (0 a `meta - 1`); los que completan una meta pasan a `premios_disponibles`.
+- `tarjeta_url` abre la tarjeta pública en el navegador, sin sesión. Su identificador es aleatorio y no se puede deducir del teléfono ni del id.
+- La meta y el premio los configura la dueña en Promociones; pueden cambiar.
+
+Al llenar una tarjeta, el servidor avisa por WhatsApp una sola vez por meta y
+solo si la clienta acepta avisos (plantilla `tarjeta_completa`).
+
+## 9. Registrar llegada (QR del mostrador)
+
+`POST /api/movil/llegada` — con token.
+
+```json
+{ "codigo": "https://citas.tunegociomx.app/llegada/k3j9...32 caracteres" }
+```
+
+Se manda tal cual lo que leyó la cámara: la dirección completa o solo el
+código. El servidor busca la cita **confirmada** de la clienta que empieza
+entre 30 minutos antes y 60 minutos después de ahora, y marca `llegada_en`.
+Repetir el escaneo no cambia la hora. No crea ni modifica citas.
+
+**200 OK** — `{"mensaje": "Llegada registrada. Te atendemos en un momento.", "data": { ...cita con "llegada_en"... }}`
+
+**422** si el QR no es el del negocio (o la dueña lo cambió). **404** si no tiene una cita en ese momento.
+
+La dueña imprime el QR desde Promociones y puede cambiarlo; el impreso anterior deja de servir.
+
+El objeto cita incluye `llegada_en` (ISO 8601 o `null`) en todos los endpoints.
+
+## 10. Reprogramar
+
+`POST /api/movil/citas/{id}/reprogramar` con `{"inicio": "2026-11-14T12:00"}`. Mismo servicio, otro horario.
+
+Para ver horarios sin que la cita propia tape su lugar:
+`GET /api/movil/disponibilidad?servicio_id=1&fecha=2026-11-14&cita_id=41`.
+
+**200** con la cita movida. **404** si no es suya. **409** si no está confirmada, ya pasó,
+el horario se ocupó, choca con otra cita suya o está apartado por otra persona.
+El horario que deja libre se ofrece a otras clientas igual que una cancelación.
+
+## 11. Ofertas de espacios liberados
+
+`GET /api/movil/ofertas` → huecos que se le avisaron por WhatsApp en las últimas 48 h,
+que siguen libres y que nadie más tiene apartados:
+
+```json
+{ "data": [ { "id": 7, "inicio": "2026-11-14T16:00:00-06:00", "servicio": { "id": 1, "nombre": "Corte de cabello", "duracion_minutos": 60, "precio": 180.0, "seccion_id": 1 } } ] }
+```
+
+`POST /api/movil/ofertas/{id}/aceptar` intenta agendar ese hueco con el servicio sugerido.
+**201** con la cita; **409** si otra persona lo tomó primero o lo tiene apartado; **404** si la oferta no es suya.
+Aceptar no reserva por sí solo: el servidor valida dentro de su transacción y solo una gana.
+
+Por WhatsApp, quien responde "Lo quiero" aparta el lugar **10 minutos** mientras confirma;
+en ese tiempo nadie más puede agendar ese horario.
+
+## 12. Datos del local
+
+`GET /api/movil/negocio` → `{"data": {"nombre": "...", "direccion": "...", "lat": 20.67, "lng": -103.34}}`.
+`lat` y `lng` son `null` si el servidor no tiene `NEGOCIO_LAT` y `NEGOCIO_LNG`.
+
+## 13. Inasistencias
+
+Si la dueña fija un límite de faltas en Promociones y la clienta lo alcanza en 90 días,
+`POST /citas` y `ofertas/aceptar` (y agendar por WhatsApp) responden **409** con
+`"Por faltas anteriores, tu cita se agenda directamente con el negocio. Escríbenos o llámanos."`
 
 El spec para generar cliente está en `docs/openapi.yaml`.

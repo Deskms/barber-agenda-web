@@ -6,8 +6,10 @@ use App\Http\Controllers\Panel\CatalogoController;
 use App\Http\Controllers\Panel\CitaController;
 use App\Http\Controllers\Panel\ClienteController;
 use App\Http\Controllers\LibresController;
+use App\Http\Controllers\TarjetaController;
 use App\Http\Controllers\Panel\HuecoController;
 use App\Http\Controllers\Panel\PromocionesController;
+use App\Http\Controllers\Panel\TableroController;
 use App\Http\Controllers\Panel\WhatsAppController;
 use Illuminate\Support\Facades\Route;
 
@@ -18,12 +20,15 @@ Route::middleware('guest')->group(function () {
 
 Route::view('/privacidad', 'privacidad')->name('privacidad');
 Route::get('/libres', LibresController::class)->name('libres')->middleware('throttle:60,1');
+Route::get('/tarjeta/{token}', TarjetaController::class)->name('tarjeta')->middleware('throttle:60,1');
+Route::view('/llegada/{codigo}', 'llegada')->name('llegada')->where('codigo', '[A-Za-z0-9]{32}');
 
 Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
     Route::get('/', [AgendaController::class, 'dia'])->name('agenda');
     Route::get('/semana', [AgendaController::class, 'semana'])->name('agenda.semana');
+    Route::get('/tablero', TableroController::class)->name('tablero');
     Route::get('/agenda/feed', [AgendaController::class, 'feed'])->name('agenda.feed');
 
     Route::get('/citas/nueva', [CitaController::class, 'create'])->name('citas.create');
@@ -45,6 +50,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/clientas', [ClienteController::class, 'index'])->name('clientes');
     Route::get('/clientas/{cliente}', [ClienteController::class, 'show'])->name('clientes.show');
     Route::put('/clientas/{cliente}', [ClienteController::class, 'update'])->name('clientes.update');
+    Route::post('/clientas/{cliente}/canjear', [ClienteController::class, 'canjear'])->name('clientes.canjear');
 
     Route::get('/huecos', [HuecoController::class, 'index'])->name('huecos');
     Route::get('/huecos/{cita}', [HuecoController::class, 'show'])->name('huecos.show');
@@ -52,6 +58,9 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/promociones', [PromocionesController::class, 'index'])->name('promociones');
     Route::put('/promociones', [PromocionesController::class, 'guardar'])->name('promociones.guardar');
+    Route::put('/promociones/sellos', [PromocionesController::class, 'guardarSellos'])->name('promociones.sellos');
+    Route::put('/promociones/faltas', [PromocionesController::class, 'guardarFaltas'])->name('promociones.faltas');
+    Route::post('/promociones/mostrador', [PromocionesController::class, 'cambiarMostrador'])->name('promociones.mostrador');
     Route::post('/promociones/regresos', [PromocionesController::class, 'enviarRegresos'])->name('promociones.regresos')->middleware('throttle:3,1');
 
     Route::get('/whatsapp', [WhatsAppController::class, 'index'])->name('whatsapp');

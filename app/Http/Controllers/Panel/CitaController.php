@@ -9,6 +9,7 @@ use App\Models\Cliente;
 use App\Models\Servicio;
 use App\Services\Agenda\CitaService;
 use App\Services\Agenda\DisponibilidadService;
+use App\Services\Lealtad\TarjetaSellos;
 use App\Services\WhatsApp\Avisos;
 use App\Support\Telefono;
 use Illuminate\Http\Request;
@@ -113,7 +114,7 @@ class CitaController extends Controller
         return back()->with('ok', $mensaje);
     }
 
-    public function estado(Request $request, Cita $cita)
+    public function estado(Request $request, Cita $cita, TarjetaSellos $sellos)
     {
         $datos = $request->validate([
             'estado' => ['required', 'in:' . implode(',', [Cita::COMPLETADA, Cita::NO_ASISTIO, Cita::CONFIRMADA])],
@@ -125,7 +126,18 @@ class CitaController extends Controller
 
         $cita->update(['estado' => $datos['estado']]);
 
-        return back()->with('ok', 'Estado actualizado.');
+        $mensaje = 'Estado actualizado.';
+
+        // Cada cita completada es un sello; si llenó la tarjeta, se le avisa.
+        if ($datos['estado'] === Cita::COMPLETADA) {
+            $avisada = $sellos->revisarMeta($cita->cliente);
+            $estado  = $sellos->estado($cita->cliente);
+            $mensaje .= " Lleva {$estado['sellos']} de {$estado['meta']} sellos";
+            $mensaje .= $estado['premios'] > 0 ? " y {$estado['premios']} premio(s) por entregar." : '.';
+            $mensaje .= $avisada ? ' Se le avisó por WhatsApp.' : '';
+        }
+
+        return back()->with('ok', $mensaje);
     }
 
     public function edit(Cita $cita)

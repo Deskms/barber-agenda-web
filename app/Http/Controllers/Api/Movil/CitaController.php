@@ -73,6 +73,30 @@ class CitaController extends Controller
         );
     }
 
+    /** POST /api/movil/citas/{cita}/reprogramar — mismo servicio, otro horario. */
+    public function reprogramar(Request $request, int $cita): JsonResponse
+    {
+        $datos = $request->validate([
+            'inicio' => ['required', 'date_format:Y-m-d\TH:i'],
+        ]);
+
+        $propia = $request->user()->citas()->with('servicio')->findOrFail($cita);
+
+        if ($propia->estado !== Cita::CONFIRMADA || $propia->inicio->isPast()) {
+            return response()->json(['mensaje' => 'Solo se puede cambiar una cita confirmada que no ha pasado.'], 409);
+        }
+
+        try {
+            $this->citas->reprogramar($propia, Carbon::createFromFormat('Y-m-d\TH:i', $datos['inicio']));
+        } catch (HorarioNoDisponibleException $e) {
+            return response()->json(['mensaje' => $e->getMessage()], 409);
+        }
+
+        return response()->json(
+            ['data' => new CitaResource($propia->fresh()->load(['servicio', 'seccion']))],
+        );
+    }
+
     /** POST /api/movil/citas/{cita}/cancelar */
     public function cancelar(Request $request, int $cita): JsonResponse
     {

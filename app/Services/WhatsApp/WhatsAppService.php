@@ -122,14 +122,47 @@ class WhatsAppService
         );
     }
 
+    private function post(array $payload): Response
+    {
+        return Http::withToken(config('whatsapp.access_token'))
+            ->acceptJson()
+            ->timeout(15)
+            ->post($this->endpoint(), $payload);
+    }
+
+    /** 5213312345678 ⇄ 523312345678; null si no es un celular de México. */
+    private function formatoMexicoAlterno(string $numero): ?string
+    {
+        if (preg_match('/^521(\d{10})$/', $numero, $m)) {
+            return '52' . $m[1];
+        }
+
+        if (preg_match('/^52(\d{10})$/', $numero, $m)) {
+            return '521' . $m[1];
+        }
+
+        return null;
+    }
+
     private function enviar(array $payload): Response
     {
         // withToken() antepone "Bearer " solo. Es el mismo encabezado que
         // faltaba cuando la Graph API contestó "object does not exist".
-        $respuesta = Http::withToken(config('whatsapp.access_token'))
-            ->acceptJson()
-            ->timeout(15)
-            ->post($this->endpoint(), $payload);
+        $respuesta = $this->post($payload);
+
+        // México: el webhook entrega el número como 521 + 10 dígitos, pero la
+        // lista de destinatarios del número de prueba puede tenerlo como
+        // 52 + 10 dígitos (o al revés). Si Meta lo rechaza por eso (131030),
+        // se reintenta una vez con el otro formato.
+        if ($respuesta->failed() && data_get($respuesta->json(), 'error.code') === 131030) {
+            $alterno = $this->formatoMexicoAlterno((string) $payload['to']);
+
+            if ($alterno !== null) {
+                Log::channel('whatsapp')->info('Reintento con formato alterno de México', ['de' => $payload['to'], 'a' => $alterno]);
+                $payload['to'] = $alterno;
+                $respuesta = $this->post($payload);
+            }
+        }
 
         $contexto = [
             'to'     => $payload['to'],

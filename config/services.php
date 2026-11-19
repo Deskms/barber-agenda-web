@@ -40,7 +40,7 @@ return [
     // solo con botones y listas.
     'anthropic' => [
         'key'    => env('ANTHROPIC_API_KEY'),
-        'model'  => env('ANTHROPIC_MODEL', 'claude-opus-5-5'),
+        'model'  => env('ANTHROPIC_MODEL', 'claude-haiku-5-5'), // clasificar intención: Haiku basta y cuesta ~40 veces menos que Opus
         'effort' => env('ANTHROPIC_EFFORT', 'low'),
     ],
 

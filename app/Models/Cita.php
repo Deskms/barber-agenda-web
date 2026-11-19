@@ -32,6 +32,7 @@ class Cita extends Model
             'fin'          => 'datetime',
             'cancelada_en' => 'datetime',
             'recordatorio_enviado_en' => 'datetime',
+            'llegada_en'   => 'datetime',
         ];
     }
 
@@ -48,6 +49,12 @@ class Cita extends Model
     public function seccion(): BelongsTo
     {
         return $this->belongsTo(Seccion::class);
+    }
+
+    /** Aviso de hueco que originó esta cita (espacio recuperado). */
+    public function difusion(): BelongsTo
+    {
+        return $this->belongsTo(Difusion::class);
     }
 
     public function difusiones(): HasMany

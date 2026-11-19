@@ -19,14 +19,20 @@ class AgendaController extends Controller
         $horario = $disponibilidad->horarioDe($dia);
 
         $citas = Cita::query()
-            ->with(['cliente', 'servicio'])
+            ->with(['cliente', 'servicio', 'seccion'])
             ->delDia($dia)
             ->orderBy('inicio')
             ->get();
 
+        // Las canceladas no se pintan en el calendario (su horario ya está libre):
+        // se listan en el panel lateral.
+        $canceladas = $citas->where('estado', Cita::CANCELADA)->values();
+        $citas      = $citas->where('estado', '!=', Cita::CANCELADA)->values();
+
         // Una columna por sección: cada una tiene su propia agenda y sus huecos.
         $secciones = Seccion::query()->where('activo', true)->orderBy('nombre')->get();
         $agendas   = $secciones->map(fn (Seccion $s) => ['titulo' => $s->nombre, 'citas' => $citas->where('seccion_id', $s->id)]);
+        $agendas   = $agendas->values();
 
         $sinSeccion = $citas->whereNull('seccion_id');
 
@@ -38,12 +44,39 @@ class AgendaController extends Controller
             'huecos' => $horario ? $this->huecos($dia, $horario, $a['citas']) : [],
         ]);
 
+        // Rango de horas del calendario: el horario de atención, ampliado si
+        // hubiera alguna cita fuera de él; un día cerrado muestra 9 a 20.
+        $desde = $horario ? $dia->copy()->setTimeFromTimeString($horario->abre) : $dia->copy()->setTime(9, 0);
+        $hasta = $horario ? $dia->copy()->setTimeFromTimeString($horario->cierra) : $dia->copy()->setTime(20, 0);
+        if ($citas->isNotEmpty()) {
+            $primera = $citas->sortBy('inicio')->first()->inicio;
+            $ultima  = $citas->sortByDesc('fin')->first()->fin;
+            $desde   = $primera->lessThan($desde) ? $primera->copy() : $desde;
+            $hasta   = $ultima->greaterThan($hasta) ? $ultima->copy() : $hasta;
+        }
+        $desde->minute(0)->second(0);
+        if ($hasta->minute > 0) {
+            $hasta->addHour()->minute(0);
+        }
+
+        // Para la marca "NUEVA": la primera cita que tuvo cada clienta.
+        $primeras = Cita::query()
+            ->whereIn('cliente_id', $citas->pluck('cliente_id')->unique())
+            ->selectRaw('cliente_id, MIN(id) as primera')
+            ->groupBy('cliente_id')
+            ->pluck('primera', 'cliente_id');
+
         return view('agenda.dia', [
-            'dia'     => $dia,
-            'horario' => $horario,
-            'citas'   => $citas,
-            'agendas' => $agendas,
-            'firma'   => $this->firma($dia, $dia),
+            'dia'        => $dia,
+            'horario'    => $horario,
+            'citas'      => $citas,
+            'canceladas' => $canceladas,
+            'agendas'    => $agendas,
+            'desde'      => $desde,
+            'hasta'      => $hasta,
+            'primeras'   => $primeras,
+            'elegida'    => (int) $request->query('cita'),
+            'firma'      => $this->firma($dia, $dia),
         ]);
     }
 

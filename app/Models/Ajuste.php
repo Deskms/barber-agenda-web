@@ -23,6 +23,9 @@ class Ajuste extends Model
         'huecos_max'           => '5',  // máximo de avisos pagados por hueco
         'regreso_auto'         => '0',  // recordatorio de "ya te toca volver"
         'presupuesto_mensual'  => '100', // MXN al mes en mensajes de marketing
+        'sellos_meta'          => '10', // citas completadas para llenar la tarjeta
+        'sellos_premio'        => 'Un corte gratis', // pendiente de validar con la dueña (R-011)
+        'faltas_bloqueo'       => '0',  // faltas en 90 días para ya no agendar sola (0 = sin límite)
     ];
 
     public static function valor(string $clave): ?string

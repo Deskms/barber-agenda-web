@@ -28,6 +28,10 @@ return [
     'negocio'      => [
         'nombre'    => env('NEGOCIO_NOMBRE', 'TuNegocio Citas'),
         'direccion' => env('NEGOCIO_DIRECCION', ''),
+        // Coordenadas del local para la brújula de la app (grados decimales).
+        // Vacío o inválido → null, para que la app diga que falta configurarlo.
+        'lat'       => is_numeric(env('NEGOCIO_LAT')) ? (float) env('NEGOCIO_LAT') : null,
+        'lng'       => is_numeric(env('NEGOCIO_LNG')) ? (float) env('NEGOCIO_LNG') : null,
     ],
 
     /*
@@ -91,6 +95,16 @@ return [
             'category' => 'UTILITY',
             'body'     => 'Hola {{1}}, tu cita de {{2}} del {{3}} a las {{4}} fue cancelada. Escríbenos por aquí para elegir otro horario.',
             'ejemplos' => ['Fernanda', 'Corte', 'viernes 17 de octubre', '16:00'],
+        ],
+
+        // Tarjeta de sellos llena. Se manda una sola vez por meta y solo a
+        // quien acepta avisos. Meta la puede reclasificar como MARKETING.
+        'tarjeta_completa' => [
+            'name'     => 'tarjeta_completa',
+            'language' => 'es_MX',
+            'category' => 'MARKETING',
+            'body'     => 'Hola {{1}}, completaste tu tarjeta de sellos en {{2}}. Tu premio: {{3}}. Muéstralo en tu próxima visita.',
+            'ejemplos' => ['Fernanda', 'TuNegocio Citas', 'Un corte gratis'],
         ],
 
         // "Ya te toca volver": se manda a quien no ha regresado después de

@@ -42,7 +42,8 @@ class Campanas
     {
         $desde = Carbon::now()->startOfMonth();
 
-        $pagados = Difusion::where('gratis', false)->where('estado', 'enviada')->where('created_at', '>=', $desde)->count()
+        // Un aviso enviado cuesta aunque después se acepte o venza.
+        $pagados = Difusion::where('gratis', false)->whereIn('estado', ['enviada', 'aceptada', 'vencida'])->where('created_at', '>=', $desde)->count()
             + Recontacto::where('gratis', false)->where('estado', 'enviado')->where('created_at', '>=', $desde)->count();
 
         return round($pagados * $this->costoPorMensaje(), 2);

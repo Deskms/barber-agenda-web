@@ -14,3 +14,8 @@ Schedule::command('citas:recordar')
 Schedule::command('campanas:regresos')
     ->dailyAt('11:00')
     ->withoutOverlapping();
+
+// Los avisos de huecos que ya pasaron dejan de ofrecerse en la app.
+Schedule::command('huecos:vencer')
+    ->everyFifteenMinutes()
+    ->withoutOverlapping();

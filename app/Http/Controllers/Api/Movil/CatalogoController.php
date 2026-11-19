@@ -35,12 +35,18 @@ class CatalogoController extends Controller
         $datos = $request->validate([
             'servicio_id' => ['required', 'integer'],
             'fecha'       => ['required', 'date_format:Y-m-d'],
+            // Al reprogramar, la cita propia no debe tapar su propio horario.
+            'cita_id'     => ['nullable', 'integer'],
         ]);
+
+        $ignorar = isset($datos['cita_id'])
+            ? $request->user()->citas()->whereKey($datos['cita_id'])->value('id')
+            : null;
 
         $servicio = Servicio::activos()->findOrFail($datos['servicio_id']);
         $dia      = Carbon::createFromFormat('Y-m-d', $datos['fecha'])->startOfDay();
 
-        $slots = $this->disponibilidad->slotsDisponibles($servicio, $dia);
+        $slots = $this->disponibilidad->slotsDisponibles($servicio, $dia, null, $ignorar);
 
         return response()->json([
             'fecha'       => $dia->toDateString(),

@@ -18,6 +18,7 @@ class Difusion extends Model
             'fin'    => 'datetime',
             'gratis' => 'boolean',
             'automatica' => 'boolean',
+            'apartado_hasta' => 'datetime',
         ];
     }
 

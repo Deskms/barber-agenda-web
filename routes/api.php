@@ -3,7 +3,11 @@
 use App\Http\Controllers\Api\Movil\AuthController;
 use App\Http\Controllers\Api\Movil\CatalogoController;
 use App\Http\Controllers\Api\Movil\CitaController;
+use App\Http\Controllers\Api\Movil\LlegadaController;
+use App\Http\Controllers\Api\Movil\NegocioController;
+use App\Http\Controllers\Api\Movil\OfertaController;
 use App\Http\Controllers\Api\Movil\PerfilController;
+use App\Http\Controllers\Api\Movil\SellosController;
 use App\Http\Controllers\Api\WhatsAppWebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -43,8 +47,14 @@ Route::prefix('movil')->name('movil.')->group(function () {
         Route::get('citas', [CitaController::class, 'index'])->name('citas.index');
         Route::post('citas', [CitaController::class, 'store'])->name('citas.store');
         Route::post('citas/{cita}/cancelar', [CitaController::class, 'cancelar'])->name('citas.cancelar');
+        Route::post('citas/{cita}/reprogramar', [CitaController::class, 'reprogramar'])->name('citas.reprogramar');
 
         Route::get('perfil', [PerfilController::class, 'show'])->name('perfil.show');
         Route::put('perfil', [PerfilController::class, 'update'])->name('perfil.update');
+        Route::get('sellos', [SellosController::class, 'show'])->name('sellos');
+        Route::post('llegada', [LlegadaController::class, 'store'])->name('llegada');
+        Route::get('negocio', NegocioController::class)->name('negocio');
+        Route::get('ofertas', [OfertaController::class, 'index'])->name('ofertas');
+        Route::post('ofertas/{oferta}/aceptar', [OfertaController::class, 'aceptar'])->name('ofertas.aceptar');
     });
 });

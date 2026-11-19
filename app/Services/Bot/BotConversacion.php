@@ -110,6 +110,14 @@ class BotConversacion
             $intencion = ['intencion' => $this->porPalabras($limpio), 'servicio_id' => null, 'fecha' => null, 'hora' => null];
         }
 
+        // "Agendar", "quiero una cita"… justo después de un aviso de hueco: se
+        // le ofrece primero ese espacio. La plantilla dice "respóndenos por
+        // aquí", y antes solo "sí" o "lo quiero" llegaban al hueco.
+        if ($intencion['intencion'] === 'agendar' && empty($intencion['fecha']) && empty($intencion['hora'])
+            && $this->responderAviso($cliente)) {
+            return;
+        }
+
         match ($intencion['intencion']) {
             'agendar'   => $this->agendarDesdeIntencion($cliente, $intencion),
             'mis_citas', 'cancelar' => $this->misCitas($cliente),
@@ -527,7 +535,7 @@ class BotConversacion
         return false;
     }
 
-    /** "Lo quiero": ofrece el hueco con el servicio que la clienta suele pedir en esa sección. */
+    /** "Lo quiero": ofrece el hueco con el servicio que se le avisó (o su habitual, si cabe). */
     private function tomarHueco(Cliente $cliente, ?string $id): void
     {
         $difusion = ctype_digit((string) $id)
@@ -541,7 +549,26 @@ class BotConversacion
             return;
         }
 
-        $servicio = app(\App\Services\Marketing\Campanas::class)->servicioHabitual($cliente, $difusion->seccion_id);
+        $huecos   = app(\App\Services\Agenda\Huecos::class);
+        $servicio = $huecos->servicioPara($cliente, $difusion);
+
+        if ($servicio) {
+            // Se le guarda el lugar unos minutos mientras confirma.
+            if (! $huecos->apartar($difusion)) {
+                $this->whatsapp->enviarTexto($cliente->wa_id, 'Otra persona está apartando ese espacio. Si no confirma en unos minutos vuelve a quedar libre. Te muestro lo que sigue disponible ese día.');
+                $this->elegirHora($cliente, $servicio, $difusion->inicio->copy()->startOfDay());
+
+                return;
+            }
+
+            $this->pedirConfirmacion($cliente, $servicio, $difusion->inicio->copy());
+
+            return;
+        }
+
+        // Ya no cabe: o alguien lo apartó y está confirmando, o alguien lo ganó.
+        $servicio = $difusion->cita?->servicio
+            ?? app(\App\Services\Marketing\Campanas::class)->servicioHabitual($cliente, $difusion->seccion_id);
 
         if (! $servicio) {
             $this->elegirServicio($cliente);
@@ -551,14 +578,9 @@ class BotConversacion
 
         $fin = $difusion->inicio->copy()->addMinutes($servicio->duracion_minutos);
 
-        if ($this->disponibilidad->estaLibre($difusion->inicio, $fin, seccionId: $servicio->seccion_id)) {
-            $this->pedirConfirmacion($cliente, $servicio, $difusion->inicio->copy());
-
-            return;
-        }
-
-        // Alguien más lo tomó primero: se le ofrece lo que quede ese día.
-        $this->whatsapp->enviarTexto($cliente->wa_id, 'Uy, alguien más ganó ese espacio. Te muestro lo que sigue libre ese día.');
+        $this->whatsapp->enviarTexto($cliente->wa_id, $huecos->apartadoPorOtra($cliente->id, $servicio->seccion_id, $difusion->inicio, $fin)
+            ? 'Otra persona está apartando ese espacio. Si no confirma en unos minutos vuelve a quedar libre. Te muestro lo que sigue disponible ese día.'
+            : 'Uy, alguien más ganó ese espacio. Te muestro lo que sigue libre ese día.');
         $this->elegirHora($cliente, $servicio, $difusion->inicio->copy()->startOfDay());
     }
 
