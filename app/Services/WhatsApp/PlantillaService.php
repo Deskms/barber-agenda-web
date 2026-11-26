@@ -40,16 +40,9 @@ class PlantillaService
      */
     public function crear(array $definicion): Response
     {
-        $payload = [
-            'name'       => $definicion['name'],
-            'language'   => $definicion['language'],
-            'category'   => strtoupper($definicion['category']),
-            'components' => [[
-                'type'    => 'BODY',
-                'text'    => $definicion['body'],
-                'example' => ['body_text' => [array_values($definicion['ejemplos'])]],
-            ]],
-        ];
+        $payload = ! empty($definicion['autenticacion'])
+            ? $this->payloadAutenticacion($definicion)
+            : $this->payloadNormal($definicion);
 
         $respuesta = $this->cliente()->post($this->endpoint(), $payload);
 
@@ -64,6 +57,45 @@ class PlantillaService
             : Log::channel('whatsapp')->error('Fallo al crear plantilla', $contexto);
 
         return $respuesta;
+    }
+
+    /**
+     * Formato que Meta exige para AUTHENTICATION: cuerpo predefinido con la
+     * recomendación de seguridad, pie con la vigencia y botón de copiar código.
+     */
+    public function payloadAutenticacion(array $definicion): array
+    {
+        $minutos = (int) ($definicion['vence_minutos'] ?? 10);
+
+        return [
+            'name'                     => $definicion['name'],
+            'language'                 => $definicion['language'],
+            'category'                 => 'AUTHENTICATION',
+            'message_send_ttl_seconds' => $minutos * 60,
+            'components'               => [
+                ['type' => 'BODY', 'add_security_recommendation' => true],
+                ['type' => 'FOOTER', 'code_expiration_minutes' => $minutos],
+                ['type' => 'BUTTONS', 'buttons' => [[
+                    'type'     => 'OTP',
+                    'otp_type' => 'COPY_CODE',
+                    'text'     => $definicion['texto_boton'] ?? 'Copiar código',
+                ]]],
+            ],
+        ];
+    }
+
+    private function payloadNormal(array $definicion): array
+    {
+        return [
+            'name'       => $definicion['name'],
+            'language'   => $definicion['language'],
+            'category'   => strtoupper($definicion['category']),
+            'components' => [[
+                'type'    => 'BODY',
+                'text'    => $definicion['body'],
+                'example' => ['body_text' => [array_values($definicion['ejemplos'])]],
+            ]],
+        ];
     }
 
     public function eliminar(string $nombre): Response

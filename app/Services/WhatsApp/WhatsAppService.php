@@ -62,6 +62,54 @@ class WhatsAppService
     }
 
     /**
+     * Código de acceso con la plantilla de autenticación. Meta pide el código
+     * dos veces: en el cuerpo y en el botón de "Copiar código".
+     */
+    public function enviarCodigoAcceso(string $waId, string $codigo): Response
+    {
+        return $this->enviar([
+            'messaging_product' => 'whatsapp',
+            'to'                => $waId,
+            'type'              => 'template',
+            'template'          => [
+                'name'       => 'codigo_acceso',
+                'language'   => ['code' => config('whatsapp.plantillas.codigo_acceso.language', 'es_MX')],
+                'components' => [
+                    ['type' => 'body', 'parameters' => [['type' => 'text', 'text' => $codigo]]],
+                    ['type' => 'button', 'sub_type' => 'url', 'index' => '0', 'parameters' => [['type' => 'text', 'text' => $codigo]]],
+                ],
+            ],
+        ]);
+    }
+
+    /**
+     * Envía la primera plantilla de la lista que Meta acepte. Sirve para
+     * estrenar una plantilla nueva sin dejar de avisar mientras Meta la
+     * revisa: si contesta que no existe o no está aprobada (errores 132xxx),
+     * se intenta con la siguiente.
+     *
+     * @param  array<int, string>  $plantillas
+     * @param  array<int, string>  $parametros
+     */
+    public function enviarPlantillaConRespaldo(string $waId, array $plantillas, array $parametros = []): Response
+    {
+        $respuesta = null;
+
+        foreach ($plantillas as $nombre) {
+            $respuesta = $this->enviarPlantilla($waId, $nombre, config("whatsapp.plantillas.{$nombre}.language", 'es_MX'), $parametros);
+            $codigo    = (int) data_get($respuesta->json(), 'error.code');
+
+            if ($respuesta->successful() || $codigo < 132000 || $codigo > 132999) {
+                return $respuesta;
+            }
+
+            Log::channel('whatsapp')->warning('Plantilla no disponible; se usa la de respaldo', ['plantilla' => $nombre, 'codigo' => $codigo]);
+        }
+
+        return $respuesta;
+    }
+
+    /**
      * Hasta 3 botones de respuesta rápida. El id regresa en el webhook
      * como interactive.button_reply.id cuando la clienta toca uno.
      *

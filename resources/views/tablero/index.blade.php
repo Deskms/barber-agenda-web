@@ -11,6 +11,7 @@
     <form method="get" class="ms-auto d-flex gap-2">
         <input type="month" name="mes" class="form-control form-control-sm" value="{{ $mes->format('Y-m') }}">
         <button class="btn btn-sm btn-outline-secondary">Ver</button>
+        <a class="btn btn-sm btn-acento" href="{{ route('reportes', ['periodo' => 'mes', 'fecha' => $mes->toDateString()]) }}">Reportes y exportar</a>
     </form>
 </div>
 

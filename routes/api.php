@@ -38,6 +38,11 @@ Route::prefix('movil')->name('movil.')->group(function () {
         ->middleware('throttle:10,10')
         ->name('auth.token');
 
+    // Entrada con Google. La primera vez pide confirmar el número de WhatsApp.
+    Route::post('auth/google', [AuthController::class, 'google'])
+        ->middleware('throttle:10,10')
+        ->name('auth.google');
+
     Route::middleware(['auth:sanctum', 'throttle:60,1'])->group(function () {
         Route::post('auth/salir', [AuthController::class, 'salir'])->name('auth.salir');
 

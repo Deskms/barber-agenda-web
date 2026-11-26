@@ -138,7 +138,7 @@ class AccesoMovil
                 return;
             }
 
-            $this->whatsapp->enviarPlantilla($cliente->wa_id, 'codigo_acceso', 'es_MX', [$codigo]);
+            $this->whatsapp->enviarCodigoAcceso($cliente->wa_id, $codigo);
         } catch (\Throwable $e) {
             // Que falle el envío no debe tirar la petición: la clienta puede
             // volver a pedir el código. El código nunca se escribe en la bitácora.

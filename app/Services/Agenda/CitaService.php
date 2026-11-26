@@ -120,6 +120,9 @@ class CitaService
 
             $this->huecos->registrarRecuperacion($cita);
 
+            // Si estaba inactiva por no venir, vuelve a activa al agendar.
+            app(\App\Services\Clientes\Clientas::class)->reactivar($cliente);
+
             return $cita;
         });
     }

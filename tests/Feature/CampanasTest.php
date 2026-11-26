@@ -84,7 +84,8 @@ class CampanasTest extends TestCase
         $this->assertSame(["{$luis->wa_id}:interactive", "{$pedro->wa_id}:template"], $this->aQuien());
         $this->assertTrue(Difusion::where('cliente_id', $luis->id)->value('gratis'));
         $this->assertFalse(Difusion::where('cliente_id', $pedro->id)->value('gratis'));
-        $this->assertSame('espacio_liberado', $this->enviados()[1]['template']['name']);
+        $this->assertSame('espacio_liberado_agendar', $this->enviados()[1]['template']['name']);
+        $this->assertStringContainsString('AGENDAR', $this->enviados()[0]['interactive']['body']['text']);
     }
 
     public function test_respeta_tope_por_hueco_y_presupuesto(): void

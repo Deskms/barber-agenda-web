@@ -93,7 +93,8 @@ class BotConversacion
 
         // Respuesta a un aviso de hueco o a un "ya te toca volver" mandado
         // por plantilla: la plantilla no lleva botones, así que se contesta "sí".
-        if (in_array($limpio, ['si', 'sii', 'si!', 'si porfavor', 'si por favor', 'quiero', 'lo quiero', 'me interesa', 'va', 'ok', 'sale'], true)
+        // AGENDAR es la palabra que ahora indica el aviso de espacio libre.
+        if (in_array($limpio, ['agendar', 'agendar!', 'agendar cita', 'si', 'sii', 'si!', 'si porfavor', 'si por favor', 'quiero', 'lo quiero', 'me interesa', 'va', 'ok', 'sale'], true)
             && $this->responderAviso($cliente)) {
             return;
         }

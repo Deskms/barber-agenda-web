@@ -366,3 +366,7 @@ main { padding-bottom: calc(1rem + env(safe-area-inset-bottom)) !important; }
     .cal-scroll { overflow: visible; }
     .cal { min-width: 0; }
 }
+
+/* Botón «Landing page» del menú: abre la página pública del salón */
+.btn-landing{display:inline-flex;align-items:center;gap:6px;white-space:nowrap;align-self:flex-start}
+@media (min-width:1200px){.btn-landing{align-self:center}}

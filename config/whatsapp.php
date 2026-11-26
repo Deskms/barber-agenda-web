@@ -50,17 +50,30 @@ return [
     |               espacio libre). Exige consentimiento y cuesta más.
     |
     */
+    // Aviso de espacio libre: se intenta primero la plantilla que le dice a
+    // la clienta la palabra para agendar. Mientras Meta no la apruebe, se usa
+    // la anterior (ver WhatsAppService::enviarPlantillaConRespaldo).
+    'plantillas_hueco' => ['espacio_liberado_agendar', 'espacio_liberado'],
+
     'plantillas' => [
 
         // Categoria AUTHENTICATION en Meta: es la unica que deja mandar
         // codigos de un solo uso. Sin ella aprobada, la app movil no puede
         // iniciar sesion de una clienta cuya ventana de 24 h este cerrada.
+        //
+        // Meta no deja escribir el texto de las de autenticación: el cuerpo lo
+        // pone Meta ("*123456* es tu código de verificación. Por tu seguridad,
+        // no lo compartas.") con un botón para copiar el código y el aviso de
+        // cuándo vence. Por eso aquí solo van esas opciones.
         'codigo_acceso' => [
-            'name'     => 'codigo_acceso',
-            'language' => 'es_MX',
-            'category' => 'AUTHENTICATION',
-            'body'     => 'Tu codigo para entrar a la app es {{1}}. Vence en 10 minutos y no debes compartirlo.',
-            'ejemplos' => ['482913'],
+            'name'               => 'codigo_acceso',
+            'language'           => 'es_MX',
+            'category'           => 'AUTHENTICATION',
+            'autenticacion'      => true,
+            'vence_minutos'      => 10,
+            'texto_boton'        => 'Copiar código',
+            'body'               => '*{{1}}* es tu código de verificación. Por tu seguridad, no lo compartas.',
+            'ejemplos'           => ['482913'],
         ],
 
         'confirmacion_cita' => [
@@ -84,6 +97,17 @@ return [
             'language' => 'es_MX',
             'category' => 'MARKETING',
             'body'     => 'Hola {{1}}, se liberó un espacio para {{2}} el {{3}} a las {{4}}. Si te interesa, respóndenos por aquí y lo apartamos.',
+            'ejemplos' => ['Fernanda', 'Peinado', 'viernes 17 de octubre', '16:00'],
+        ],
+
+        // Igual que la anterior, pero dice la palabra exacta para quedarse
+        // con el espacio. Se manda a revisión con:
+        //   php artisan whatsapp:plantillas --crear --solo=espacio_liberado_agendar
+        'espacio_liberado_agendar' => [
+            'name'     => 'espacio_liberado_agendar',
+            'language' => 'es_MX',
+            'category' => 'MARKETING',
+            'body'     => 'Hola {{1}}, se liberó un espacio para {{2}} el {{3}} a las {{4}}. Para quedarte con él, responde *AGENDAR* y te lo apartamos.',
             'ejemplos' => ['Fernanda', 'Peinado', 'viernes 17 de octubre', '16:00'],
         ],
 

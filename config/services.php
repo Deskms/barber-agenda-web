@@ -38,6 +38,13 @@ return [
 
     // Interpretación de texto libre en WhatsApp. Sin llave, el bot funciona
     // solo con botones y listas.
+    // Inicio de sesión con Google en la app móvil. Es el "ID de cliente web"
+    // de Google Cloud (el que la app pone como serverClientId). Se aceptan
+    // varios separados por coma.
+    'google' => [
+        'client_id' => env('GOOGLE_CLIENT_ID'),
+    ],
+
     'anthropic' => [
         'key'    => env('ANTHROPIC_API_KEY'),
         'model'  => env('ANTHROPIC_MODEL', 'claude-haiku-5-5'), // clasificar intención: Haiku basta y cuesta ~40 veces menos que Opus

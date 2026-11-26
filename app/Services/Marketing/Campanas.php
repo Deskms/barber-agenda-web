@@ -151,15 +151,14 @@ class Campanas
         if ($difusion->gratis) {
             return $this->whatsapp->enviarBotones(
                 $clienta->wa_id,
-                "¡Hola {$this->nombre($clienta)}! Se liberó un espacio para {$servicio?->nombre} el {$dia} a las {$hora}. ¿Te lo apartamos?",
+                "¡Hola {$this->nombre($clienta)}! Se liberó un espacio para {$servicio?->nombre} el {$dia} a las {$hora}. Para quedarte con él, responde *AGENDAR* o toca «Lo quiero».",
                 ["dif:{$difusion->id}" => 'Lo quiero', 'menu:inicio' => 'No, gracias'],
             );
         }
 
-        return $this->whatsapp->enviarPlantilla(
+        return $this->whatsapp->enviarPlantillaConRespaldo(
             $clienta->wa_id,
-            'espacio_liberado',
-            config('whatsapp.plantillas.espacio_liberado.language', 'es_MX'),
+            config('whatsapp.plantillas_hueco'),
             [$this->nombre($clienta), $servicio?->nombre ?? 'tu servicio', $dia, $hora],
         );
     }

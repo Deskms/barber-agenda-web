@@ -9,6 +9,7 @@ use App\Http\Controllers\LibresController;
 use App\Http\Controllers\TarjetaController;
 use App\Http\Controllers\Panel\HuecoController;
 use App\Http\Controllers\Panel\PromocionesController;
+use App\Http\Controllers\Panel\ReporteController;
 use App\Http\Controllers\Panel\TableroController;
 use App\Http\Controllers\Panel\WhatsAppController;
 use Illuminate\Support\Facades\Route;
@@ -29,6 +30,9 @@ Route::middleware('auth')->group(function () {
     Route::get('/', [AgendaController::class, 'dia'])->name('agenda');
     Route::get('/semana', [AgendaController::class, 'semana'])->name('agenda.semana');
     Route::get('/tablero', TableroController::class)->name('tablero');
+    Route::get('/reportes', [ReporteController::class, 'index'])->name('reportes');
+    Route::get('/reportes/pdf', [ReporteController::class, 'pdf'])->name('reportes.pdf');
+    Route::get('/reportes/excel', [ReporteController::class, 'excel'])->name('reportes.excel');
     Route::get('/agenda/feed', [AgendaController::class, 'feed'])->name('agenda.feed');
 
     Route::get('/citas/nueva', [CitaController::class, 'create'])->name('citas.create');
@@ -50,6 +54,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/clientas', [ClienteController::class, 'index'])->name('clientes');
     Route::get('/clientas/{cliente}', [ClienteController::class, 'show'])->name('clientes.show');
     Route::put('/clientas/{cliente}', [ClienteController::class, 'update'])->name('clientes.update');
+    Route::delete('/clientas/{cliente}', [ClienteController::class, 'destroy'])->name('clientes.destroy');
     Route::post('/clientas/{cliente}/canjear', [ClienteController::class, 'canjear'])->name('clientes.canjear');
 
     Route::get('/huecos', [HuecoController::class, 'index'])->name('huecos');

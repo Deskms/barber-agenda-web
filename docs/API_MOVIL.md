@@ -388,3 +388,13 @@ Si la dueña fija un límite de faltas en Promociones y la clienta lo alcanza en
 `"Por faltas anteriores, tu cita se agenda directamente con el negocio. Escríbenos o llámanos."`
 
 El spec para generar cliente está en `docs/openapi.yaml`.
+
+## Entrar con Google (21-nov-2026)
+
+`POST /api/movil/auth/google` con `{ "id_token": "...", "dispositivo": "..." }`.
+
+- El servidor verifica el token con Google (`aud` = `GOOGLE_CLIENT_ID`, emisor de Google, sin vencer y correo verificado).
+- Si la cuenta ya está ligada: responde igual que `auth/token` (`token`, `expira_en`, `cliente`).
+- La primera vez responde `requiere_telefono: true` y un `enlace_google` (vale 15 min). La app pide el número,
+  usa `auth/codigo` como siempre y en `auth/token` manda también `enlace_google`. Desde ahí entra solo con Google.
+- Errores: 422 si Google no valida el token o el enlace venció; 409 si esa cuenta ya está ligada a otro número.

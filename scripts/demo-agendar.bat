@@ -1,6 +1,8 @@
 @echo off
 rem Arranque para la demo de agendar: carga el catalogo (no duplica) y levanta web, cola y programador.
 cd /d %~dp0..
+echo Actualizando la base de datos (solo aplica lo nuevo)...
+C:\php84\php.exe artisan migrate --force
 echo Cargando servicios, horarios y clientas de prueba (reejecutable, no duplica)...
 C:\php84\php.exe artisan db:seed --class=CatalogoSeeder --force
 call "%~dp0iniciar-windows.bat"

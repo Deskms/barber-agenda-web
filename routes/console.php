@@ -15,6 +15,11 @@ Schedule::command('campanas:regresos')
     ->dailyAt('11:00')
     ->withoutOverlapping();
 
+// Clientas sin visitas en 20 días: se marcan inactivas (y se reactivan al agendar).
+Schedule::command('clientas:inactivas')
+    ->dailyAt('03:15')
+    ->withoutOverlapping();
+
 // Los avisos de huecos que ya pasaron dejan de ofrecerse en la app.
 Schedule::command('huecos:vencer')
     ->everyFifteenMinutes()

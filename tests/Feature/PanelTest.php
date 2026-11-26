@@ -97,7 +97,25 @@ class PanelTest extends TestCase
         $this->assertSame(1, Difusion::where('cliente_id', $rocio->id)->count());
         $this->assertSame(0, Difusion::where('cliente_id', $fernanda->id)->count());
         $this->assertCount(1, $this->enviados());
-        $this->assertSame('espacio_liberado', $this->enviados()[0]['template']['name']);
+        $this->assertSame('espacio_liberado_agendar', $this->enviados()[0]['template']['name']);
+    }
+
+    public function test_si_meta_aun_no_aprueba_la_plantilla_con_agendar_usa_la_anterior(): void
+    {
+        $this->actingAs($this->duena());
+        \Illuminate\Support\Facades\Http::fakeSequence('graph.facebook.com/*')
+            ->push(['error' => ['code' => 132001, 'message' => 'Template name does not exist in the translation']], 404)
+            ->push(['messages' => [['id' => 'wamid.prueba']]], 200);
+
+        $cita = app(CitaService::class)->agendar($this->clienta('Ana'), $this->corte(), Carbon::parse('2026-10-20 12:00'));
+        app(CitaService::class)->cancelar($cita);
+
+        $rocio = $this->clienta('Rocío');
+        $this->post("/huecos/{$cita->id}/difundir", ['clientas' => [$rocio->id]])->assertRedirect();
+
+        $nombres = collect($this->enviados())->pluck('template.name')->all();
+        $this->assertSame(['espacio_liberado_agendar', 'espacio_liberado'], $nombres);
+        $this->assertSame('enviada', Difusion::where('cliente_id', $rocio->id)->value('estado'));
     }
 
     public function test_recordatorio_se_envia_una_sola_vez(): void

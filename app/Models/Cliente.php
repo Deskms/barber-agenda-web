@@ -18,7 +18,10 @@ class Cliente extends Authenticatable
 
     protected function casts(): array
     {
-        return ['acepta_avisos' => 'boolean', 'ultimo_mensaje_en' => 'datetime', 'metas_avisadas' => 'integer'];
+        return [
+            'acepta_avisos' => 'boolean', 'ultimo_mensaje_en' => 'datetime', 'metas_avisadas' => 'integer',
+            'eliminada_en' => 'datetime', 'inactiva_desde' => 'datetime',
+        ];
     }
 
     public function citas(): HasMany
@@ -35,7 +38,13 @@ class Cliente extends Authenticatable
     /** Clientas que dieron consentimiento para recibir avisos de espacios liberados. */
     public function scopeNotificables(Builder $q): Builder
     {
-        return $q->where('acepta_avisos', true);
+        return $q->where('acepta_avisos', true)->whereNull('eliminada_en');
+    }
+
+    /** Las que no se han borrado desde el panel. */
+    public function scopeVigentes(Builder $q): Builder
+    {
+        return $q->whereNull('eliminada_en');
     }
 
     /**

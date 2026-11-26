@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#141416">
+  <title>Barber Agenda · Presentación de Upgrade</title>
+  <meta name="description" content="Presentación interactiva del sistema de citas de Joss Barber salon, desarrollado por el equipo Upgrade.">
+  <link rel="icon" href="assets/monograma.svg"><link rel="stylesheet" href="estilo.css">
+  <link rel="stylesheet" href="capitulos.css"><script defer src="notas.js"></script><script defer src="presentacion.js"></script>
+</head>
+<body>
+  <header>
+    <button id="inicio" class="brand" aria-label="Upgrade, volver a la portada"><img class="brand-icon" src="assets/monograma.svg" alt=""><img class="wordmark" src="assets/firma.svg" alt="Upgrade"></button>
+    <span class="header-divider"></span><span class="type-label">Barber Agenda</span>
+    <nav aria-label="Herramientas de presentación">
+      <button id="indice" aria-haspopup="dialog"><span class="grid-icon" aria-hidden="true">⊞</span> Índice</button>
+      <button id="notas" aria-haspopup="dialog"><span class="notes-icon" aria-hidden="true"></span> Guion</button>
+      <button id="pantalla" class="expand" aria-label="Pantalla completa" title="Pantalla completa"><span aria-hidden="true">⛶</span></button>
+    </nav>
+  </header>
+  <nav class="chapter-rail" id="rail" aria-label="Capítulos"></nav><main id="escena" tabindex="-1" aria-label="Diapositiva actual"></main>
+  <footer>
+    <div class="progress-info"><span id="contador">01 <small>/ 17</small></span><div id="progreso" aria-hidden="true"></div><span id="capitulo">Portada</span></div>
+    <div class="controls"><span class="keys-hint">Navega con <kbd>←</kbd> <kbd>→</kbd></span><button id="prev" aria-label="Diapositiva anterior" title="Anterior">‹</button><button id="next" aria-label="Diapositiva siguiente" title="Siguiente">›</button></div>
+  </footer>
+  <dialog id="panel"><div class="dialog-top"><h2 id="panel-title"></h2><button id="cerrar" aria-label="Cerrar">×</button></div><div id="panel-body"></div></dialog>
+  <span id="aviso" class="sr" aria-live="polite"></span>
+  <noscript>Activa JavaScript para navegar por la presentación y probar la reserva.</noscript>
+</body></html>

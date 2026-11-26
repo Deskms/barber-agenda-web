@@ -61,10 +61,10 @@ class Avisos
                 continue;
             }
 
-            $respuesta = $this->whatsapp->enviarPlantilla(
+            // La plantilla le dice a la clienta que responda AGENDAR.
+            $respuesta = $this->whatsapp->enviarPlantillaConRespaldo(
                 $clienta->wa_id,
-                'espacio_liberado',
-                config('whatsapp.plantillas.espacio_liberado.language', 'es_MX'),
+                config('whatsapp.plantillas_hueco'),
                 [$this->nombre($clienta), $servicio->nombre, $this->dia($inicio), $inicio->format('H:i')],
             );
 

@@ -14,6 +14,8 @@ class ClienteResource extends JsonResource
             'telefono'      => $this->wa_id,
             'nombre'        => $this->nombre,
             'acepta_avisos' => (bool) $this->acepta_avisos,
+            'email'         => $this->email,
+            'con_google'    => $this->google_sub !== null,
         ];
     }
 }
